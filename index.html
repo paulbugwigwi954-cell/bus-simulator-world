@@ -24,30 +24,31 @@ canvas{display:block;width:100%;height:100%}
 <div class="h" id="bar"><span id="nx"></span><div id="pb"><div id="pf"></div></div></div>
 <div class="h" id="msg"></div>
 <div id="pad"><div><button data-k="L">◀</button><button data-k="R">▶</button></div><div><button data-k="E">Mlango</button><button data-k="B">Break</button><button data-k="G">Gesi</button></div></div>
-<div id="ov"><div><h1>Safari ya Mkoani</h1><p><b>Dar es Salaam → Dodoma</b> (km 450, njia ya Chalinze, Morogoro, Gairo, Kibaigwa)</p>
+<div id="ov"><div><h1>Safari ya Mkoani</h1><p><select id="sr" style="padding:9px;border-radius:8px"></select> <select id="sb" style="padding:9px;border-radius:8px"></select></p><p id="ri"></p>
 <p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili!</p>
-<p>W/↑ gesi · S/↓ break · A D / ← → usukani · E mlango · H honi · C kamera</p>
+<p>W/↑ gesi · S/↓ break · A D / ← → usukani · E mlango · H honi · C kamera · M sauti</p>
 <input id="nm" maxlength="20" placeholder="Jina lako" style="padding:11px;border-radius:8px;border:0;margin-right:6px"><button id="go">Anza Safari</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="./data.js"></script>
 <script>
-const $=id=>document.getElementById(id),L=9000,KMT=450,TANK=220;
-const STOPS=[["Ubungo (Dar)",0],["Chalinze",100],["Morogoro",195],["Gairo",305],["Kibaigwa",385],["Dodoma",450]].map(a=>({n:a[0],km:a[1],s:100+a[1]/KMT*(L-200),done:false}));
+const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),RT=ROUTES[Q.get('r')]||ROUTES.dodoma,BS=BUSES[Q.get('b')]||BUSES.scania,KMT=RT.km,L=KMT*20,TANK=BS.tank;
+const STOPS=RT.stops.map(a=>({n:a[0],km:a[1],s:100+a[1]/KMT*(L-200),done:false}));
 const KM=s=>(s-100)/(L-200)*KMT;
-const cx=s=>55*Math.sin(s/650)+22*Math.sin(s/210+1),dxs=s=>cx(s+1)-cx(s);
+const [A1,W1,A2,W2]=RT.curve,cx=s=>A1*Math.sin(s/W1)+A2*Math.sin(s/W2+1),dxs=s=>cx(s+1)-cx(s);
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(65,1,.5,700);
 function rs(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',rs);rs();
 const hemi=new THREE.HemisphereLight(0xffffff,0x665533,.6),sun=new THREE.DirectionalLight(0xffffff,.8);sun.position.set(80,120,40);scene.add(hemi,sun);
 const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{})),B=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
 // ground & road
-const gnd=new THREE.Mesh(new THREE.PlaneGeometry(3000,L+600),M(0x7d8a3c));gnd.rotation.x=-Math.PI/2;gnd.position.set(0,0,-L/2);scene.add(gnd);
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(3000,L+600),M(RT.ground));gnd.rotation.x=-Math.PI/2;gnd.position.set(0,0,-L/2);scene.add(gnd);
 function rib(w,y,mat,vs){const p=[],u=[],ix=[],N=Math.floor(L/4)+40;for(let i=0;i<=N;i++){const s=i*4-80,x=cx(s);p.push(x-w,y,-s,x+w,y,-s);u.push(0,s/vs,1,s/vs);if(i)ix.push(2*i-2,2*i-1,2*i,2*i-1,2*i+1,2*i)}
 const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(u,2));g.setIndex(ix);g.computeVertexNormals();scene.add(new THREE.Mesh(g,mat))}
 rib(11,.01,M(0x9a7b4f,{side:2}),12);
 const cv=document.createElement('canvas');cv.width=64;cv.height=128;const x2=cv.getContext('2d');x2.fillStyle='#3b3b40';x2.fillRect(0,0,64,128);x2.fillStyle='#fff';x2.fillRect(2,0,3,128);x2.fillRect(59,0,3,128);x2.fillStyle='#f5c518';x2.fillRect(30,0,4,64);
 const tx=new THREE.CanvasTexture(cv);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.anisotropy=4;rib(6,.03,new THREE.MeshLambertMaterial({map:tx,side:2}),12);
 // trees
-const tg=new THREE.CylinderGeometry(.3,.5,5),cg=new THREE.SphereGeometry(1,8,6),tm=M(0x5a4030),lm=M(0x4d7a2a);
+const tg=new THREE.CylinderGeometry(.3,.5,5),cg=new THREE.SphereGeometry(1,8,6),tm=M(0x5a4030),lm=M(RT.leaf);
 for(let i=0;i<320;i++){const s=Math.random()*L,sd=Math.random()<.5?-1:1,o=sd*(14+Math.random()*80),g=new THREE.Group(),k=2+Math.random()*3;
 const t=new THREE.Mesh(tg,tm),c=new THREE.Mesh(cg,lm);t.position.y=2.5;c.scale.set(k*1.6,k*.5,k*1.6);c.position.y=5+k*.2;g.add(t,c);g.position.set(cx(s)+o,0,-s);scene.add(g)}
 // stops
@@ -60,68 +61,88 @@ for(let i=0;i<22;i++){const s=250+Math.random()*(L-500);if(STOPS.some(p=>Math.ab
 for(let k=0;k<n;k++){const b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,1.3),M(pc[k%5])),h=new THREE.Mesh(new THREE.SphereGeometry(.25),M(0x5a3a28));b.position.set(k*.8,.65,0);h.position.set(k*.8,1.5,0);g.add(b,h)}
 g.position.set(cx(s)-8,0,-s);scene.add(g);groups.push({s,n,g,taken:false})}
 // vehicles
-function bus(){const g=new THREE.Group(),w=M(0xf4f4f0),dk=M(0x15232f);
-const body=B(2.6,2.7,11.5,w);body.position.y=2.1;const roof=B(2.4,.35,11.2,M(0xdedede));roof.position.y=3.6;
-const win=B(2.66,1,9.8,dk);win.position.set(0,2.7,-.2);const fw=B(2.4,1.5,.1,dk);fw.position.set(0,2.5,-5.78);
-[[0x1a9a3c,1.2],[0xf5c518,1.55],[0x1a5fb4,1.9]].forEach(a=>{const s=B(2.64,.22,11.52,M(a[0]));s.position.y=a[1]-.35;g.add(s)});
-g.add(body,roof,win,fw);
-for(const z of[-3.6,2.4,4])for(const sx of[-1.3,1.3]){const wh=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.4,14),M(0x111111));wh.rotation.z=Math.PI/2;wh.position.set(sx,.55,z);g.add(wh)}
-for(const sx of[-.9,.9]){const h=B(.4,.25,.1,M(0xffffcc,{emissive:0xffffaa}));h.position.set(sx,1.2,-5.78);g.add(h);const t=B(.4,.2,.1,M(0xff2222,{emissive:0x880000}));t.position.set(sx,1.3,5.78);g.add(t)}
+function bus(){const g=new THREE.Group(),Lb=BS.len,W=2.55,wm=M(BS.col),dk=M(0x15232f),bk=M(0x1b1b1b);
+const add=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m};
+add(B(W,1.1,Lb,M(BS.lower)),0,.95,0);add(B(W-.02,1.75,Lb-.3,wm),0,2.35,0);add(B(W-.25,.22,Lb-.7,M(0xe6e6e6)),0,3.3,0);
+BS.stripes.forEach(a=>add(B(W+.03,a[2],Lb-.1,M(a[0])),0,a[1],0));
+const n=Math.floor((Lb-3)/1.3);for(let i=0;i<n;i++)add(B(W+.05,.95,1.05,dk),0,2.62,-Lb/2+2.5+i*1.3);
+add(B(W-.3,1.4,.1,dk),0,2.55,-(Lb-.3)/2-.03).rotation.x=BS.rake;
+add(B(.08,1.9,1.0,M(0x2b3d4d)),-W/2-.02,2.0,-Lb/2+1.3);
+[-1.8,.4].forEach(z=>add(B(W+.03,.8,1.7,bk),0,.95,z));
+const dc=document.createElement('canvas');dc.width=256;dc.height=40;const dg=dc.getContext('2d');dg.fillStyle='#000';dg.fillRect(0,0,256,40);dg.fillStyle='#ffb300';dg.font='bold 28px sans-serif';dg.textAlign='center';dg.fillText(STOPS[STOPS.length-1].n.toUpperCase(),128,30);
+add(new THREE.Mesh(new THREE.PlaneGeometry(W-.9,.34),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(dc)})),0,3.05,-(Lb-.3)/2-.09);
+BS.axles.forEach(z=>{add(B(W+.03,.9,1.5,bk),0,.62,z);[-1,1].forEach(sx=>{const tr=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.4,16),M(0x111111));tr.rotation.z=Math.PI/2;add(tr,sx*(W/2-.1),.55,z);const hb=new THREE.Mesh(new THREE.CylinderGeometry(.28,.28,.44,10),M(0xbbbbbb));hb.rotation.z=Math.PI/2;add(hb,sx*(W/2-.1),.55,z)})});
+add(B(W+.05,.3,.3,bk),0,.5,-Lb/2-.1);add(B(W+.05,.3,.3,bk),0,.5,Lb/2+.1);
+[-1,1].forEach(sx=>{add(B(.12,.55,.12,bk),sx*(W/2+.3),2.9,-Lb/2+.9);add(B(.09,.4,.2,M(0x222222)),sx*(W/2+.32),3.1,-Lb/2+.9);
+add(B(.45,.28,.1,M(0xffffcc,{emissive:0xffffaa})),sx*.95,1.15,-Lb/2-.03);add(B(.4,.22,.1,M(0xff2222,{emissive:0x880000})),sx*.95,1.25,Lb/2+.03)});
+if(BS.ac)add(B(1.6,.3,3,M(0xcfcfcf)),0,3.55,0.5);
 return g}
 const player=bus();scene.add(player);
-const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);spot.position.set(0,1.3,-5);const tgt=new THREE.Object3D();tgt.position.set(0,0,-40);player.add(spot,tgt);spot.target=tgt;
+const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);spot.position.set(0,1.3,-BS.len/2);const tgt=new THREE.Object3D();tgt.position.set(0,0,-40);player.add(spot,tgt);spot.target=tgt;
 const traf=[];function mkT(opp,truck){const g=new THREE.Group(),l=truck?9:4.2,b=B(truck?2.6:2,truck?3.2:1.4,l,M(truck?[0x44609a,0x8a8a8a,0xa33][Math.random()*3|0]:[0xd33,0x39c,0xeee,0x222][Math.random()*4|0]));b.position.y=truck?1.9:1;g.add(b);scene.add(g);
 const t={g,opp,len:l,s:0,d:opp?3:-3,v:opp?-(14+Math.random()*6):7+Math.random()*3};t.s=Math.random()*L;traf.push(t)}
 for(let i=0;i<14;i++)mkT(true,i%3==0);for(let i=0;i<7;i++)mkT(false,true);
 // state
 const S={s:70,d:-6.5,v:0,money:0,fuel:TANK,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0},K={};
 const kmap={KeyW:'G',ArrowUp:'G',KeyS:'B',ArrowDown:'B',KeyA:'L',ArrowLeft:'L',KeyD:'R',ArrowRight:'R',Space:'B'};
-addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')S.view^=1});
+addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')S.view^=1;if(e.code=='KeyM')muted=!muted});
 addEventListener('keyup',e=>{if(kmap[e.code])K[kmap[e.code]]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();k=='E'?doors():K[k]=1});['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,()=>K[k]=0))});
-let au;function horn(){try{au=au||new AudioContext();[400,500].forEach(f=>{const o=au.createOscillator(),g=au.createGain();o.type='square';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();o.stop(au.currentTime+.45)})}catch(e){}}
+let AC,eo,eo2,ef,eg,muted=false;
+function audioInit(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(eo)return;
+eo=AC.createOscillator();eo2=AC.createOscillator();ef=AC.createBiquadFilter();eg=AC.createGain();const g2=AC.createGain();
+eo.type='sawtooth';eo2.type='square';ef.type='lowpass';ef.frequency.value=420;eg.gain.value=0;g2.gain.value=.5;
+eo.connect(ef);eo2.connect(g2);g2.connect(ef);ef.connect(eg);eg.connect(AC.destination);eo.start();eo2.start()}catch(e){}}
+function updEngine(dt,thr,on){if(!eo)return;const v=S.v,G=BS.gears;let i=0;while(i<G.length-1&&v>G[i+1])i++;
+const hi=G[i+1]||BS.vmax,r=Math.min(1,Math.max(0,(v-G[i])/(hi-G[i]))),rpm=.22+.78*r,f=BS.hz*(.7+rpm*1.7),t=AC.currentTime;
+eo.frequency.setTargetAtTime(f,t,.06);eo2.frequency.setTargetAtTime(f/2,t,.06);ef.frequency.setTargetAtTime(300+rpm*900+(thr?400:0),t,.08);
+eg.gain.setTargetAtTime(on&&!muted?.05+rpm*.05+(thr?.04:0):0,t,.1)}
+function horn(){audioInit();if(!AC)return;BS.horn.forEach(f=>{const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.5)})}
+function thud(){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=70;g.gain.setValueAtTime(.3,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.4);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.4)}
 let mt;function say(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(mt);mt=setTimeout(()=>m.style.display='none',3500)}
 const fmt=n=>Math.round(n).toLocaleString('en-US');
 function doors(){if(!S.run||S.done)return;if(S.v>1.5)return say('Simamisha basi kwanza.');
 const i=STOPS.findIndex(p=>Math.abs(p.s-S.s)<30);
 if(i>=0){const p=STOPS[i];if(p.done)return say('Umeshahudumia kituo hiki.');p.done=true;
-const out=S.pax.filter(x=>x.to==i);S.pax=S.pax.filter(x=>x.to!=i);let inc=0;out.forEach(x=>inc+=Math.round((p.km-x.from)*78/100)*100);S.money+=inc;
-let n=0;if(i<STOPS.length-1){n=Math.min(50-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++)S.pax.push({from:p.km,to:i+1+Math.floor(Math.random()*(STOPS.length-1-i))})}
-const lit=TANK-S.fuel,cost=Math.round(lit*19)*100;S.fuel=TANK;S.money-=cost;
-say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · mapato +'+fmt(inc)+' · mafuta -'+fmt(cost)+' TZS');if(i==STOPS.length-1)finish();return}
+const out=S.pax.filter(x=>x.to==i);S.pax=S.pax.filter(x=>x.to!=i);let inc=0;out.forEach(x=>inc+=Math.round((p.km-x.from)*RT.rate/RT.round)*RT.round);S.money+=inc;
+let n=0;if(i<STOPS.length-1){n=Math.min(BS.pax-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++)S.pax.push({from:p.km,to:i+1+Math.floor(Math.random()*(STOPS.length-1-i))})}
+const lit=TANK-S.fuel,cost=Math.round(lit*RT.fuelPrice/RT.round)*RT.round;S.fuel=TANK;S.money-=cost;
+say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · mapato +'+fmt(inc)+' · mafuta -'+fmt(cost)+' '+RT.cur);if(i==STOPS.length-1)finish();return}
 const g=groups.find(q=>!q.taken&&Math.abs(q.s-S.s)<14&&S.d<-3);
-if(g){const k=Math.min(g.n,50-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
+if(g){const k=Math.min(g.n,BS.pax-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
 for(let j=0;j<k;j++)S.pax.push({from:KM(g.s),to:nx+Math.floor(Math.random()*(STOPS.length-nx))});say('Abiria '+k+' wamepanda njiani.');return}
 say('Hakuna kituo wala abiria hapa.')}
-function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika Dodoma!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' TZS</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+'</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
-$('go').onclick=()=>{$('ov').style.display='none';S.run=true;horn();say('Simama stendi (Ubungo) na bonyeza Mlango kupakia abiria.')};
+function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+'</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
+{const sr=$('sr'),sb=$('sb'),nm=$('nm');for(const k in ROUTES)sr.add(new Option(ROUTES[k].name,k,0,ROUTES[k]===RT));for(const k in BUSES)sb.add(new Option(BUSES[k].name,k,0,BUSES[k]===BS));
+try{nm.value=localStorage.getItem('nm')||''}catch(e){}
+sr.onchange=sb.onchange=()=>{try{localStorage.setItem('nm',nm.value)}catch(e){}location.search='?r='+sr.value+'&b='+sb.value};$('ri').textContent=RT.name+' · km '+KMT+' · '+BS.name}
+$('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}$('ov').style.display='none';S.run=true;horn();say('Simama stendi ('+STOPS[0].n+') na bonyeza Mlango kupakia abiria.')};
 const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
 if(S.run&&!S.done){S.t+=dt;S.cd-=dt;
 const steer=(K.R?1:0)-(K.L?1:0),off=Math.abs(S.d)>6.2;
-let a=K.G&&S.fuel>0?Math.max(0,5-S.v*.14):0;if(K.B)a-=12;a-=.02*S.v+(off?S.v*.35:0)+(S.v>0?.3:0);
-S.v=Math.max(0,Math.min(30,S.v+a*dt));if(off)S.off+=dt;
-S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(S.v>.5?1.2+S.v*.13:0)));S.s+=S.v*dt;S.fuel=Math.max(0,S.fuel-S.v*dt*.022);
+let a=K.G&&S.fuel>0?Math.max(0,BS.acc-S.v*.14):0;if(K.B)a-=12;a-=.02*S.v+(off?S.v*.35:0)+(S.v>0?.3:0);
+S.v=Math.max(0,Math.min(BS.vmax,S.v+a*dt));if(off)S.off+=dt;
+S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(S.v>.5?1.2+S.v*.13:0)));S.s+=S.v*dt;S.fuel=Math.max(0,S.fuel-S.v*dt*BS.fuel);
 if(S.s>L-60){S.s=L-60;S.v=0}
 traf.forEach(t=>{t.s+=t.v*dt;if(t.s<0)t.s=L;if(t.s>L)t.s=0;
-if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+5.7&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.')}});}
+if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+BS.len/2&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.');thud()}});}
 const s=S.s,x=cx(s)+S.d,yaw=-Math.atan(dxs(s))-((K.R?1:0)-(K.L?1:0))*.12;
 player.position.set(x,0,-s);player.rotation.y=yaw;player.rotation.z=(Math.abs(S.d)>6.2?Math.sin(now/40)*.01*S.v:0);
 traf.forEach(t=>{t.g.position.set(cx(t.s)+t.d,0,-t.s);t.g.rotation.y=-Math.atan(dxs(t.s))+(t.opp?Math.PI:0)});
 const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
-if(S.view){cam.position.set(x-fx,3.3,-s-fz);cam.lookAt(x+fx*20,2.6,-s+fz*20)}
+if(S.view){const k=BS.len/2-1.7;cam.position.set(x+fx*k,2.5,-s+fz*k);cam.lookAt(x+fx*25,2.4,-s+fz*25)}
 else{cam.position.set(x-fx*15,6.5,-s-fz*15);cam.lookAt(x+fx*12,2.2,-s+fz*12)}
 // time & sky
-const hr=(15.5+S.t*.025)%24,day=Math.max(0,Math.sin(Math.PI*(hr-6)/12)),dusk=Math.max(0,1-Math.abs(day-.12)*6);
+const hr=(RT.hour+S.t*.025)%24,day=Math.max(0,Math.sin(Math.PI*(hr-6)/12)),dusk=Math.max(0,1-Math.abs(day-.12)*6);
 sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6);scene.background=sky;scene.fog=new THREE.Fog(sky.getHex(),60,day>.15?420:200);
 sun.intensity=.15+.8*day;hemi.intensity=.18+.5*day;spot.intensity=day<.3?2.2:0;
 const nx=STOPS.find(p=>p.s>S.s+10)||STOPS[STOPS.length-1];
 $('l').innerHTML='<b>'+Math.round(S.v*3.6)+'</b> km/h<br>Mafuta: '+Math.round(S.fuel)+' L<br>Saa: '+String(Math.floor(hr)).padStart(2,'0')+':'+String(Math.floor(hr%1*60)).padStart(2,'0');
-$('r').innerHTML='TZS '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/50<br>Ajali: '+S.crashes;
+$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Ajali: '+S.crashes;
 $('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)));$('pf').style.width=Math.max(0,Math.min(100,KM(S.s)/KMT*100))+'%';
-R.render(scene,cam)}
+updEngine(dt,K.G&&S.fuel>0,S.run&&!S.done);R.render(scene,cam)}
 requestAnimationFrame(loop);
-</script>
-<script type="module" src="./supabase.js"></script>
+</script><script type="module" src="./supabase.js"></script>
 </body></html>
