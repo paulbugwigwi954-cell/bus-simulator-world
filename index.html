@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="sw"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Safari ya Mkoani: Dar–Dodoma</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--p:rgba(10,14,20,.72);--t:#fff;--a:#f5c518}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0;height:100%;overflow:hidden;background:#000;font-family:system-ui,sans-serif;color:var(--t)}
+canvas{display:block;width:100%;height:100%}
+.h{position:fixed;background:var(--p);padding:6px 10px;border-radius:8px;font-size:14px;line-height:1.4}
+#l{left:8px;top:calc(8px + env(safe-area-inset-top,0px))}#r{right:8px;top:calc(8px + env(safe-area-inset-top,0px));text-align:right}
+#bar{left:50%;transform:translateX(-50%);top:calc(8px + env(safe-area-inset-top,0px));width:34%;min-width:150px;text-align:center;font-size:12px}
+#pb{height:6px;background:#444;border-radius:3px;margin-top:4px;position:relative}#pf{height:100%;background:var(--a);border-radius:3px;width:0}
+#msg{left:50%;transform:translateX(-50%);bottom:calc(120px + env(safe-area-inset-bottom,0px));text-align:center;max-width:80%;display:none}
+#pad{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:0;right:0;display:flex;justify-content:space-between;padding:0 10px;pointer-events:none}
+#pad div{display:flex;gap:8px;pointer-events:auto}
+#pad button{width:64px;height:64px;border-radius:50%;border:2px solid #fff6;background:var(--p);color:#fff;font-size:13px;touch-action:none}
+#ov{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px}
+#ov div{max-width:460px}#ov h1{margin:0 0 8px;color:var(--a)}#ov p{font-size:14px;line-height:1.5;margin:6px 0}
+#ov button{margin-top:12px;padding:12px 28px;font-size:17px;border:0;border-radius:8px;background:var(--a);font-weight:700}
+</style></head><body>
+<canvas id="c"></canvas>
+<div class="h" id="l"></div><div class="h" id="r"></div>
+<div class="h" id="bar"><span id="nx"></span><div id="pb"><div id="pf"></div></div></div>
+<div class="h" id="msg"></div>
+<div id="pad"><div><button data-k="L">◀</button><button data-k="R">▶</button></div><div><button data-k="E">Mlango</button><button data-k="B">Break</button><button data-k="G">Gesi</button></div></div>
+<div id="ov"><div><h1>Safari ya Mkoani</h1><p><b>Dar es Salaam → Dodoma</b> (km 450, njia ya Chalinze, Morogoro, Gairo, Kibaigwa)</p>
+<p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili!</p>
+<p>W/↑ gesi · S/↓ break · A D / ← → usukani · E mlango · H honi · C kamera</p>
+<input id="nm" maxlength="20" placeholder="Jina lako" style="padding:11px;border-radius:8px;border:0;margin-right:6px"><button id="go">Anza Safari</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id),L=9000,KMT=450,TANK=220;
+const STOPS=[["Ubungo (Dar)",0],["Chalinze",100],["Morogoro",195],["Gairo",305],["Kibaigwa",385],["Dodoma",450]].map(a=>({n:a[0],km:a[1],s:100+a[1]/KMT*(L-200),done:false}));
+const KM=s=>(s-100)/(L-200)*KMT;
+const cx=s=>55*Math.sin(s/650)+22*Math.sin(s/210+1),dxs=s=>cx(s+1)-cx(s);
+const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(65,1,.5,700);
+function rs(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',rs);rs();
+const hemi=new THREE.HemisphereLight(0xffffff,0x665533,.6),sun=new THREE.DirectionalLight(0xffffff,.8);sun.position.set(80,120,40);scene.add(hemi,sun);
+const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{})),B=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
+// ground & road
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(3000,L+600),M(0x7d8a3c));gnd.rotation.x=-Math.PI/2;gnd.position.set(0,0,-L/2);scene.add(gnd);
+function rib(w,y,mat,vs){const p=[],u=[],ix=[],N=Math.floor(L/4)+40;for(let i=0;i<=N;i++){const s=i*4-80,x=cx(s);p.push(x-w,y,-s,x+w,y,-s);u.push(0,s/vs,1,s/vs);if(i)ix.push(2*i-2,2*i-1,2*i,2*i-1,2*i+1,2*i)}
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(u,2));g.setIndex(ix);g.computeVertexNormals();scene.add(new THREE.Mesh(g,mat))}
+rib(11,.01,M(0x9a7b4f,{side:2}),12);
+const cv=document.createElement('canvas');cv.width=64;cv.height=128;const x2=cv.getContext('2d');x2.fillStyle='#3b3b40';x2.fillRect(0,0,64,128);x2.fillStyle='#fff';x2.fillRect(2,0,3,128);x2.fillRect(59,0,3,128);x2.fillStyle='#f5c518';x2.fillRect(30,0,4,64);
+const tx=new THREE.CanvasTexture(cv);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.anisotropy=4;rib(6,.03,new THREE.MeshLambertMaterial({map:tx,side:2}),12);
+// trees
+const tg=new THREE.CylinderGeometry(.3,.5,5),cg=new THREE.SphereGeometry(1,8,6),tm=M(0x5a4030),lm=M(0x4d7a2a);
+for(let i=0;i<320;i++){const s=Math.random()*L,sd=Math.random()<.5?-1:1,o=sd*(14+Math.random()*80),g=new THREE.Group(),k=2+Math.random()*3;
+const t=new THREE.Mesh(tg,tm),c=new THREE.Mesh(cg,lm);t.position.y=2.5;c.scale.set(k*1.6,k*.5,k*1.6);c.position.y=5+k*.2;g.add(t,c);g.position.set(cx(s)+o,0,-s);scene.add(g)}
+// stops
+function label(t){const c=document.createElement('canvas');c.width=512;c.height=96;const g=c.getContext('2d');g.fillStyle='#0b5d2a';g.fillRect(0,0,512,96);g.fillStyle='#fff';g.font='bold 44px sans-serif';g.textAlign='center';g.fillText(t,256,64);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c)}));s.scale.set(14,2.6,1);return s}
+STOPS.forEach(p=>{const g=new THREE.Group();const r=B(9,.4,24,M(0xcccccc));r.position.set(0,4.5,0);g.add(r);[-10,10].forEach(z=>{const q=B(.4,4.5,.4,M(0x555555));q.position.set(-3.5,2.2,z);g.add(q)});
+const f=B(10,.1,24,M(0x888888));f.position.y=.08;g.add(f);const l=label(p.n);l.position.y=8;g.add(l);g.position.set(cx(p.s)-15,0,-p.s);scene.add(g)});
+// roadside people
+const groups=[],pc=[0xd33,0x39c,0xe9b,0x3a5,0xfc3];
+for(let i=0;i<22;i++){const s=250+Math.random()*(L-500);if(STOPS.some(p=>Math.abs(p.s-s)<60))continue;const g=new THREE.Group(),n=1+Math.floor(Math.random()*4);
+for(let k=0;k<n;k++){const b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,1.3),M(pc[k%5])),h=new THREE.Mesh(new THREE.SphereGeometry(.25),M(0x5a3a28));b.position.set(k*.8,.65,0);h.position.set(k*.8,1.5,0);g.add(b,h)}
+g.position.set(cx(s)-8,0,-s);scene.add(g);groups.push({s,n,g,taken:false})}
+// vehicles
+function bus(){const g=new THREE.Group(),w=M(0xf4f4f0),dk=M(0x15232f);
+const body=B(2.6,2.7,11.5,w);body.position.y=2.1;const roof=B(2.4,.35,11.2,M(0xdedede));roof.position.y=3.6;
+const win=B(2.66,1,9.8,dk);win.position.set(0,2.7,-.2);const fw=B(2.4,1.5,.1,dk);fw.position.set(0,2.5,-5.78);
+[[0x1a9a3c,1.2],[0xf5c518,1.55],[0x1a5fb4,1.9]].forEach(a=>{const s=B(2.64,.22,11.52,M(a[0]));s.position.y=a[1]-.35;g.add(s)});
+g.add(body,roof,win,fw);
+for(const z of[-3.6,2.4,4])for(const sx of[-1.3,1.3]){const wh=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,.4,14),M(0x111111));wh.rotation.z=Math.PI/2;wh.position.set(sx,.55,z);g.add(wh)}
+for(const sx of[-.9,.9]){const h=B(.4,.25,.1,M(0xffffcc,{emissive:0xffffaa}));h.position.set(sx,1.2,-5.78);g.add(h);const t=B(.4,.2,.1,M(0xff2222,{emissive:0x880000}));t.position.set(sx,1.3,5.78);g.add(t)}
+return g}
+const player=bus();scene.add(player);
+const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);spot.position.set(0,1.3,-5);const tgt=new THREE.Object3D();tgt.position.set(0,0,-40);player.add(spot,tgt);spot.target=tgt;
+const traf=[];function mkT(opp,truck){const g=new THREE.Group(),l=truck?9:4.2,b=B(truck?2.6:2,truck?3.2:1.4,l,M(truck?[0x44609a,0x8a8a8a,0xa33][Math.random()*3|0]:[0xd33,0x39c,0xeee,0x222][Math.random()*4|0]));b.position.y=truck?1.9:1;g.add(b);scene.add(g);
+const t={g,opp,len:l,s:0,d:opp?3:-3,v:opp?-(14+Math.random()*6):7+Math.random()*3};t.s=Math.random()*L;traf.push(t)}
+for(let i=0;i<14;i++)mkT(true,i%3==0);for(let i=0;i<7;i++)mkT(false,true);
+// state
+const S={s:70,d:-6.5,v:0,money:0,fuel:TANK,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0},K={};
+const kmap={KeyW:'G',ArrowUp:'G',KeyS:'B',ArrowDown:'B',KeyA:'L',ArrowLeft:'L',KeyD:'R',ArrowRight:'R',Space:'B'};
+addEventListener('keydown',e=>{if(e.target.tagName=='INPUT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')S.view^=1});
+addEventListener('keyup',e=>{if(kmap[e.code])K[kmap[e.code]]=0});
+document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();k=='E'?doors():K[k]=1});['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,()=>K[k]=0))});
+let au;function horn(){try{au=au||new AudioContext();[400,500].forEach(f=>{const o=au.createOscillator(),g=au.createGain();o.type='square';o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(au.destination);o.start();o.stop(au.currentTime+.45)})}catch(e){}}
+let mt;function say(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(mt);mt=setTimeout(()=>m.style.display='none',3500)}
+const fmt=n=>Math.round(n).toLocaleString('en-US');
+function doors(){if(!S.run||S.done)return;if(S.v>1.5)return say('Simamisha basi kwanza.');
+const i=STOPS.findIndex(p=>Math.abs(p.s-S.s)<30);
+if(i>=0){const p=STOPS[i];if(p.done)return say('Umeshahudumia kituo hiki.');p.done=true;
+const out=S.pax.filter(x=>x.to==i);S.pax=S.pax.filter(x=>x.to!=i);let inc=0;out.forEach(x=>inc+=Math.round((p.km-x.from)*78/100)*100);S.money+=inc;
+let n=0;if(i<STOPS.length-1){n=Math.min(50-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++)S.pax.push({from:p.km,to:i+1+Math.floor(Math.random()*(STOPS.length-1-i))})}
+const lit=TANK-S.fuel,cost=Math.round(lit*19)*100;S.fuel=TANK;S.money-=cost;
+say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · mapato +'+fmt(inc)+' · mafuta -'+fmt(cost)+' TZS');if(i==STOPS.length-1)finish();return}
+const g=groups.find(q=>!q.taken&&Math.abs(q.s-S.s)<14&&S.d<-3);
+if(g){const k=Math.min(g.n,50-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
+for(let j=0;j<k;j++)S.pax.push({from:KM(g.s),to:nx+Math.floor(Math.random()*(STOPS.length-nx))});say('Abiria '+k+' wamepanda njiani.');return}
+say('Hakuna kituo wala abiria hapa.')}
+function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika Dodoma!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' TZS</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+'</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
+$('go').onclick=()=>{$('ov').style.display='none';S.run=true;horn();say('Simama stendi (Ubungo) na bonyeza Mlango kupakia abiria.')};
+const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
+let last=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
+if(S.run&&!S.done){S.t+=dt;S.cd-=dt;
+const steer=(K.R?1:0)-(K.L?1:0),off=Math.abs(S.d)>6.2;
+let a=K.G&&S.fuel>0?Math.max(0,5-S.v*.14):0;if(K.B)a-=12;a-=.02*S.v+(off?S.v*.35:0)+(S.v>0?.3:0);
+S.v=Math.max(0,Math.min(30,S.v+a*dt));if(off)S.off+=dt;
+S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(S.v>.5?1.2+S.v*.13:0)));S.s+=S.v*dt;S.fuel=Math.max(0,S.fuel-S.v*dt*.022);
+if(S.s>L-60){S.s=L-60;S.v=0}
+traf.forEach(t=>{t.s+=t.v*dt;if(t.s<0)t.s=L;if(t.s>L)t.s=0;
+if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+5.7&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.')}});}
+const s=S.s,x=cx(s)+S.d,yaw=-Math.atan(dxs(s))-((K.R?1:0)-(K.L?1:0))*.12;
+player.position.set(x,0,-s);player.rotation.y=yaw;player.rotation.z=(Math.abs(S.d)>6.2?Math.sin(now/40)*.01*S.v:0);
+traf.forEach(t=>{t.g.position.set(cx(t.s)+t.d,0,-t.s);t.g.rotation.y=-Math.atan(dxs(t.s))+(t.opp?Math.PI:0)});
+const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
+if(S.view){cam.position.set(x-fx,3.3,-s-fz);cam.lookAt(x+fx*20,2.6,-s+fz*20)}
+else{cam.position.set(x-fx*15,6.5,-s-fz*15);cam.lookAt(x+fx*12,2.2,-s+fz*12)}
+// time & sky
+const hr=(15.5+S.t*.025)%24,day=Math.max(0,Math.sin(Math.PI*(hr-6)/12)),dusk=Math.max(0,1-Math.abs(day-.12)*6);
+sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6);scene.background=sky;scene.fog=new THREE.Fog(sky.getHex(),60,day>.15?420:200);
+sun.intensity=.15+.8*day;hemi.intensity=.18+.5*day;spot.intensity=day<.3?2.2:0;
+const nx=STOPS.find(p=>p.s>S.s+10)||STOPS[STOPS.length-1];
+$('l').innerHTML='<b>'+Math.round(S.v*3.6)+'</b> km/h<br>Mafuta: '+Math.round(S.fuel)+' L<br>Saa: '+String(Math.floor(hr)).padStart(2,'0')+':'+String(Math.floor(hr%1*60)).padStart(2,'0');
+$('r').innerHTML='TZS '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/50<br>Ajali: '+S.crashes;
+$('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)));$('pf').style.width=Math.max(0,Math.min(100,KM(S.s)/KMT*100))+'%';
+R.render(scene,cam)}
+requestAnimationFrame(loop);
+</script>
+<script type="module" src="./supabase.js"></script>
+</body></html>
