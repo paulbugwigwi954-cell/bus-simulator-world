@@ -25,7 +25,7 @@ canvas{display:block;width:100%;height:100%}
 <div class="h" id="msg"></div>
 <div id="pad"><div><button data-k="L">◀</button><button data-k="R">▶</button></div><div><button data-k="E">Mlango</button><button data-k="B">Break</button><button data-k="G">Gesi</button></div></div>
 <div id="ov"><div><h1>Safari ya Mkoani</h1><p><select id="sr" style="padding:9px;border-radius:8px"></select> <select id="sb" style="padding:9px;border-radius:8px"></select></p><p id="ri"></p>
-<p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili!</p>
+<p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili! Punguza mwendo kwenye matuta (njano) na mashimo, na uwe mwangalifu mvua ikinyesha.</p>
 <p>W/↑ gesi · S/↓ break · A D / ← → usukani · E mlango · H honi · C kamera · M sauti</p>
 <input id="nm" maxlength="20" placeholder="Jina lako" style="padding:11px;border-radius:8px;border:0;margin-right:6px"><button id="go">Anza Safari</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -36,7 +36,7 @@ const STOPS=RT.stops.map(a=>({n:a[0],km:a[1],s:100+a[1]/KMT*(L-200),done:false})
 const KM=s=>(s-100)/(L-200)*KMT;
 const [A1,W1,A2,W2]=RT.curve,cx=s=>A1*Math.sin(s/W1)+A2*Math.sin(s/W2+1),dxs=s=>cx(s+1)-cx(s);
 const R=new THREE.WebGLRenderer({canvas:$('c'),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
-const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(65,1,.5,700);
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(65,1,.5,700);scene.add(cam);
 function rs(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}addEventListener('resize',rs);rs();
 const hemi=new THREE.HemisphereLight(0xffffff,0x665533,.6),sun=new THREE.DirectionalLight(0xffffff,.8);sun.position.set(80,120,40);scene.add(hemi,sun);
 const M=(c,o)=>new THREE.MeshLambertMaterial(Object.assign({color:c},o||{})),B=(w,h,d,m)=>new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);
@@ -82,8 +82,19 @@ const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);spot.position.set(0,1.3,-BS
 const traf=[];function mkT(opp,truck){const g=new THREE.Group(),l=truck?9:4.2,b=B(truck?2.6:2,truck?3.2:1.4,l,M(truck?[0x44609a,0x8a8a8a,0xa33][Math.random()*3|0]:[0xd33,0x39c,0xeee,0x222][Math.random()*4|0]));b.position.y=truck?1.9:1;g.add(b);scene.add(g);
 const t={g,opp,len:l,s:0,d:opp?3:-3,v:opp?-(14+Math.random()*6):7+Math.random()*3};t.s=Math.random()*L;traf.push(t)}
 for(let i=0;i<14;i++)mkT(true,i%3==0);for(let i=0;i<7;i++)mkT(false,true);
+// hazards: matuta (speed bumps) near stops, mashimo (potholes)
+const HZ=[],bm=M(0xd9b300),pm=new THREE.MeshBasicMaterial({color:0x151515});
+function addHz(s,d,type){const m=type=='bump'?B(12,.16,1.4,bm):new THREE.Mesh(new THREE.CircleGeometry(.85,14),pm);
+if(type=='bump')m.position.set(cx(s),.08,-s);else{m.rotation.x=-Math.PI/2;m.position.set(cx(s)+d,.06,-s)}scene.add(m);HZ.push({s,d,type,hit:false,warn:false})}
+STOPS.forEach(p=>{addHz(p.s-70,0,'bump');addHz(p.s+70,0,'bump')});
+for(let i=0;i<RT.holes;i++){const s=200+Math.random()*(L-400);if(!STOPS.some(p=>Math.abs(p.s-s)<90))addHz(s,Math.random()<.5?-3:3,'hole')}
+// weather: mvua
+const WET=Math.random()<RT.rain,RT0=15+Math.random()*60,gray=new THREE.Color(0x5a6470);
+const NR=700,rp=new Float32Array(NR*6);for(let i=0;i<NR;i++){const x=(Math.random()-.5)*50,y=Math.random()*30-10,z=-Math.random()*45;rp.set([x,y,z,x-.15,y-1.4,z],i*6)}
+const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
+const rain=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xaec6e0,transparent:true,opacity:0}));rain.frustumCulled=false;cam.add(rain);
 // state
-const S={s:70,d:-6.5,v:0,money:0,fuel:TANK,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0},K={};
+const S={s:70,d:-6.5,v:0,money:0,fuel:TANK,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0,dmg:0,shake:0,wx:0},K={};
 const kmap={KeyW:'G',ArrowUp:'G',KeyS:'B',ArrowDown:'B',KeyA:'L',ArrowLeft:'L',KeyD:'R',ArrowRight:'R',Space:'B'};
 addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')S.view^=1;if(e.code=='KeyM')muted=!muted});
 addEventListener('keyup',e=>{if(kmap[e.code])K[kmap[e.code]]=0});
@@ -112,7 +123,7 @@ const g=groups.find(q=>!q.taken&&Math.abs(q.s-S.s)<14&&S.d<-3);
 if(g){const k=Math.min(g.n,BS.pax-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
 for(let j=0;j<k;j++)S.pax.push({from:KM(g.s),to:nx+Math.floor(Math.random()*(STOPS.length-nx))});say('Abiria '+k+' wamepanda njiani.');return}
 say('Hakuna kituo wala abiria hapa.')}
-function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+'</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
+function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/40);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+' · Hali ya basi: '+Math.round(100-S.dmg)+'%</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
 {const sr=$('sr'),sb=$('sb'),nm=$('nm');for(const k in ROUTES)sr.add(new Option(ROUTES[k].name,k,0,ROUTES[k]===RT));for(const k in BUSES)sb.add(new Option(BUSES[k].name,k,0,BUSES[k]===BS));
 try{nm.value=localStorage.getItem('nm')||''}catch(e){}
 sr.onchange=sb.onchange=()=>{try{localStorage.setItem('nm',nm.value)}catch(e){}location.search='?r='+sr.value+'&b='+sb.value};$('ri').textContent=RT.name+' · km '+KMT+' · '+BS.name}
@@ -120,28 +131,35 @@ $('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}$('o
 const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
-if(S.run&&!S.done){S.t+=dt;S.cd-=dt;
+if(S.run&&!S.done){S.t+=dt;S.cd-=dt;S.shake=Math.max(0,S.shake-dt);S.wx+=((WET&&S.t>RT0&&S.t<RT0+110?1:0)-S.wx)*Math.min(1,dt*.4);
+HZ.forEach(h=>{const ds=h.s-(S.s+BS.len/2-3);
+if(h.type=='bump'&&!h.warn&&ds>0&&ds<45&&S.v>12){h.warn=true;say('Matuta mbele: punguza mwendo!')}
+if(Math.abs(ds)<1.2&&!h.hit&&(h.type=='bump'||Math.abs(h.d-S.d)<1.9)){h.hit=true;
+if(S.v>(h.type=='bump'?9:7)){S.dmg=Math.min(100,S.dmg+(h.type=='bump'?3:2)+S.v*.2);S.shake=.5;thud();say(h.type=='bump'?'Tuta! Basi limeharibika kidogo.':'Shimo! Punguza mwendo.')}}
+if(Math.abs(ds)>8)h.hit=false});
 const steer=(K.R?1:0)-(K.L?1:0),off=Math.abs(S.d)>6.2;
-let a=K.G&&S.fuel>0?Math.max(0,BS.acc-S.v*.14):0;if(K.B)a-=12;a-=.02*S.v+(off?S.v*.35:0)+(S.v>0?.3:0);
-S.v=Math.max(0,Math.min(BS.vmax,S.v+a*dt));if(off)S.off+=dt;
-S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(S.v>.5?1.2+S.v*.13:0)));S.s+=S.v*dt;S.fuel=Math.max(0,S.fuel-S.v*dt*BS.fuel);
+let a=K.G&&S.fuel>0?Math.max(0,BS.acc-S.v*.14):0;if(K.B)a-=12-4*S.wx;a-=.02*S.v+(off?S.v*.35:0)+(S.v>0?.3:0);
+S.v=Math.max(0,Math.min(BS.vmax*(1-S.dmg/250),S.v+a*dt));if(off)S.off+=dt;
+S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(S.v>.5?1.2+S.v*.13:0)*(1-.25*S.wx)));S.s+=S.v*dt;S.fuel=Math.max(0,S.fuel-S.v*dt*BS.fuel);
 if(S.s>L-60){S.s=L-60;S.v=0}
 traf.forEach(t=>{t.s+=t.v*dt;if(t.s<0)t.s=L;if(t.s>L)t.s=0;
-if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+BS.len/2&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.');thud()}});}
+if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+BS.len/2&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.dmg=Math.min(100,S.dmg+8);S.shake=.6;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.');thud()}});}
 const s=S.s,x=cx(s)+S.d,yaw=-Math.atan(dxs(s))-((K.R?1:0)-(K.L?1:0))*.12;
 player.position.set(x,0,-s);player.rotation.y=yaw;player.rotation.z=(Math.abs(S.d)>6.2?Math.sin(now/40)*.01*S.v:0);
 traf.forEach(t=>{t.g.position.set(cx(t.s)+t.d,0,-t.s);t.g.rotation.y=-Math.atan(dxs(t.s))+(t.opp?Math.PI:0)});
 const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
 if(S.view){const k=BS.len/2-1.7;cam.position.set(x+fx*k,2.5,-s+fz*k);cam.lookAt(x+fx*25,2.4,-s+fz*25)}
 else{cam.position.set(x-fx*15,6.5,-s-fz*15);cam.lookAt(x+fx*12,2.2,-s+fz*12)}
+cam.position.y+=Math.sin(now/18)*S.shake*.35;
 // time & sky
 const hr=(RT.hour+S.t*.025)%24,day=Math.max(0,Math.sin(Math.PI*(hr-6)/12)),dusk=Math.max(0,1-Math.abs(day-.12)*6);
-sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6);scene.background=sky;scene.fog=new THREE.Fog(sky.getHex(),60,day>.15?420:200);
+sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6);sky.lerp(gray,S.wx*.7);scene.background=sky;scene.fog=new THREE.Fog(sky.getHex(),60-30*S.wx,(day>.15?420:200)-150*S.wx);rain.material.opacity=.55*S.wx;
 sun.intensity=.15+.8*day;hemi.intensity=.18+.5*day;spot.intensity=day<.3?2.2:0;
 const nx=STOPS.find(p=>p.s>S.s+10)||STOPS[STOPS.length-1];
 $('l').innerHTML='<b>'+Math.round(S.v*3.6)+'</b> km/h<br>Mafuta: '+Math.round(S.fuel)+' L<br>Saa: '+String(Math.floor(hr)).padStart(2,'0')+':'+String(Math.floor(hr%1*60)).padStart(2,'0');
-$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Ajali: '+S.crashes;
+$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Ajali: '+S.crashes+'<br>Hali: '+Math.round(100-S.dmg)+'%'+(S.wx>.3?' 🌧':'');
 $('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)));$('pf').style.width=Math.max(0,Math.min(100,KM(S.s)/KMT*100))+'%';
+if(S.wx>.02){const a=rg.attributes.position.array;for(let i=0;i<NR;i++){const k=i*6;a[k+1]-=30*dt;a[k+4]-=30*dt;if(a[k+1]<-10){a[k+1]+=40;a[k+4]+=40}}rg.attributes.position.needsUpdate=true}
 updEngine(dt,K.G&&S.fuel>0,S.run&&!S.done);R.render(scene,cam)}
 requestAnimationFrame(loop);
 </script><script type="module" src="./supabase.js"></script>
