@@ -25,14 +25,16 @@ canvas{display:block;width:100%;height:100%}
 <div class="h" id="msg"></div>
 <div id="pad"><div><button data-k="L">◀</button><button data-k="R">▶</button></div><div><button data-k="V">Gia R/D</button><button data-k="C">Kamera</button><button data-k="E">Mlango</button><button data-k="B">Break</button><button data-k="G">Gesi</button></div></div>
 <div id="ov"><div><h1>Safari ya Mkoani</h1><p><select id="sr" style="padding:9px;border-radius:8px"></select> <select id="sb" style="padding:9px;border-radius:8px"></select></p><p id="ri"></p>
-<p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili! Punguza mwendo kwenye matuta (njano) na mashimo, na uwe mwangalifu mvua ikinyesha. Mizigo ya abiria inaongeza mapato lakini inafanya basi kuwa zito. Mipakani (kama Namanga) simama kwa ukaguzi wa hati.</p>
-<p>W/↑ gesi · S/↓ break · A D / ← → usukani · R gia ya kurudi/mbele · E mlango · H honi · C kamera (7) · buruta kuzungusha · M sauti</p>
+<p>Endesha kushoto. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango) kupakia na kushusha. Pita malori kwa tahadhari: magari yanakuja upande wa pili! Punguza mwendo kwenye matuta (njano) na mashimo, na uwe mwangalifu mvua ikinyesha. Mizigo ya abiria inaongeza mapato lakini inafanya basi kuwa zito. Mipakani (kama Namanga) simama kwa ukaguzi wa hati. Mijini kuna taa za barabarani na vivuko: simama kwenye taa nyekundu na uwapishe watembea kwa miguu. Kila abiria ana tiketi na kiti (bonyeza T): usipowashusha kituoni mwao wanalalamika na furaha inashuka.</p>
+<p>W/↑ gesi · S/↓ break · A D / ← → usukani · R gia ya kurudi/mbele · E mlango · H honi · T tiketi · C kamera (7) · buruta kuzungusha · M sauti</p>
 <input id="nm" maxlength="20" placeholder="Jina lako" style="padding:11px;border-radius:8px;border:0;margin-right:6px"><button id="go">Anza Safari</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="./data.js"></script>
 <script src="./vehicles.js"></script>
 <script src="./cockpit.js"></script>
+<script src="./traffic.js"></script>
+<script src="./tickets.js"></script>
 <script>
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),RT=ROUTES[Q.get('r')]||ROUTES.dodoma,KMT=RT.km,L=KMT*20;
 let BS=BUSES[Q.get('b')]||BUSES.scania;
@@ -72,9 +74,7 @@ function setBus(bs){BS=bs;if(body)player.remove(body);body=makeBus(bs,STOPS[STOP
 // modeli ya .glb (hiari): weka faili kwenye models/ na andika njia kwenye data.js (glb: 'models/scania.glb')
 if(bs.glb)useGlb(body,bs.glb,bs.len,bs.glbYaw,[],h=>cgGrp.children.forEach(b=>b.position.y=h+.4))}
 setBus(BS);
-const traf=[];function mkT(opp,truck){const V=makeVeh(truck?(Math.random()<.5?'lorry':'semi'):['sedan','suv','pickup','matatu'][Math.random()*4|0]);scene.add(V.g);
-traf.push({g:V.g,opp,len:V.len,s:Math.random()*L,d:opp?3:-3,v:opp?-(14+Math.random()*6):7+Math.random()*3})}
-for(let i=0;i<14;i++)mkT(true,i%3==0);for(let i=0;i<7;i++)mkT(false,true);
+TRF.init({scene,L,STOPS,cx,dxs,makeVeh});
 // hazards: matuta (speed bumps) near stops, mashimo (potholes)
 const HZ=[],bm=M(0xd9b300),pm=new THREE.MeshBasicMaterial({color:0x151515});
 function addHz(s,d,type){const m=type=='bump'?B(12,.16,1.4,bm):new THREE.Mesh(new THREE.CircleGeometry(.85,14),pm);
@@ -87,9 +87,9 @@ const NR=700,rp=new Float32Array(NR*6);for(let i=0;i<NR;i++){const x=(Math.rando
 const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
 const rain=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xaec6e0,transparent:true,opacity:0}));rain.frustumCulled=false;cam.add(rain);
 // state
-const S={s:70,d:-6.5,v:0,money:0,fuel:BS.tank,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0,dmg:0,shake:0,wx:0,wait:0,bp:null,cargo:0,rev:false},K={};
+const S={s:70,d:-6.5,v:0,money:0,fuel:BS.tank,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0,dmg:0,shake:0,wx:0,wait:0,bp:null,cargo:0,rev:false,sat:100,seats:[],log:[]},K={};
 const kmap={KeyW:'G',ArrowUp:'G',KeyS:'B',ArrowDown:'B',KeyA:'L',ArrowLeft:'L',KeyD:'R',ArrowRight:'R',Space:'B'};
-addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')camNext();if(e.code=='KeyR')togRev();if(e.code=='KeyM')muted=!muted});
+addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')camNext();if(e.code=='KeyR')togRev();if(e.code=='KeyM')muted=!muted;if(e.code=='KeyT')TK.toggle()});
 addEventListener('keyup',e=>{if(kmap[e.code])K[kmap[e.code]]=0});
 document.querySelectorAll('#pad button').forEach(b=>{const k=b.dataset.k;b.addEventListener('pointerdown',e=>{e.preventDefault();k=='E'?doors():k=='C'?camNext():k=='V'?togRev():K[k]=1});['pointerup','pointerleave','pointercancel'].forEach(v=>b.addEventListener(v,()=>K[k]=0))});
 let AC,eo,eo2,ef,eg,muted=false;
@@ -105,28 +105,31 @@ function horn(){audioInit();if(!AC)return;BS.horn.forEach(f=>{const o=AC.createO
 function thud(){if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=70;g.gain.setValueAtTime(.3,AC.currentTime);g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+.4);o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.4)}
 let mt;function say(t){const m=$('msg');m.textContent=t;m.style.display='block';clearTimeout(mt);mt=setTimeout(()=>m.style.display='none',3500)}
 const fmt=n=>Math.round(n).toLocaleString('en-US');
-function mkP(f,t){const b=Math.min(Math.floor(Math.random()*4),BS.cargo-S.cargo);S.cargo+=b;return{from:f,to:t,bags:b}}
+function sat(d,m){S.sat=Math.max(0,Math.min(100,S.sat+d));if(m){S.log.unshift(m);if(S.log.length>6)S.log.pop()}}
+function mkP(f,t){const b=Math.min(Math.floor(Math.random()*4),BS.cargo-S.cargo);S.cargo+=b;const free=[];S.seats.forEach((x,i)=>{if(!x)free.push(i)});const seat=free.length?free[Math.random()*free.length|0]:-1;
+const q={from:f,to:t,bags:b,seat,fare:Math.round((STOPS[t].km-f)*RT.rate*(1+.15*b)/RT.round)*RT.round};if(seat>=0)S.seats[seat]=q;return q}
 function doors(){if(!S.run||S.done)return;if(Math.abs(S.v)>1.5)return say('Simamisha basi kwanza.');
 const i=STOPS.findIndex(p=>Math.abs(p.s-S.s)<30);
 if(i>=0){const p=STOPS[i];if(p.border&&!p.cleared){if(S.wait>0)return say('Subiri ukaguzi...');S.wait=9;S.bp=p;return say('Ukaguzi wa mpaka umeanza (hati za abiria). Usisogee, subiri sekunde 9.')}if(p.done)return say('Umeshahudumia kituo hiki.');p.done=true;
-const out=S.pax.filter(x=>x.to==i);S.pax=S.pax.filter(x=>x.to!=i);let inc=0;out.forEach(x=>{S.cargo-=x.bags;inc+=Math.round((p.km-x.from)*RT.rate*(1+.15*x.bags)/RT.round)*RT.round});S.money+=inc;
-let n=0;if(i<STOPS.length-1){n=Math.min(BS.pax-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++)S.pax.push(mkP(p.km,i+1+Math.floor(Math.random()*(STOPS.length-1-i))))}
+const out=S.pax.filter(x=>x.to<=i);S.pax=S.pax.filter(x=>x.to>i);let missed=0,refund=0;
+out.forEach(x=>{S.cargo-=x.bags;if(x.seat>=0)S.seats[x.seat]=null;if(x.to<i){missed++;refund+=Math.round(x.fare*.5/RT.round)*RT.round}});S.money-=refund;if(missed)sat(-Math.min(25,missed*6),'Abiria '+missed+' walikosa kituo chao; wamerudishiwa nusu ya nauli');
+let n=0,inc=0;if(i<STOPS.length-1){n=Math.min(BS.pax-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++){const q=mkP(p.km,i+1+Math.floor(Math.random()*(STOPS.length-1-i)));S.pax.push(q);inc+=q.fare}}S.money+=inc;
 const lit=BS.tank-S.fuel,cost=Math.round(lit*RT.fuelPrice/RT.round)*RT.round;S.fuel=BS.tank;S.money-=cost;
-say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · mapato +'+fmt(inc)+' · mafuta -'+fmt(cost)+' '+RT.cur);if(i==STOPS.length-1)finish();return}
+say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · tiketi +'+fmt(inc)+(refund?' · marejesho -'+fmt(refund):'')+' · mafuta -'+fmt(cost)+' '+RT.cur);if(i==STOPS.length-1)finish();return}
 const g=groups.find(q=>!q.taken&&Math.abs(q.s-S.s)<14&&S.d<-3);
 if(g){const k=Math.min(g.n,BS.pax-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
-for(let j=0;j<k;j++)S.pax.push(mkP(KM(g.s),nx+Math.floor(Math.random()*(STOPS.length-nx))));say('Abiria '+k+' wamepanda njiani.');return}
+let inc2=0;for(let j=0;j<k;j++){const q=mkP(KM(g.s),nx+Math.floor(Math.random()*(STOPS.length-nx)));S.pax.push(q);inc2+=q.fare}S.money+=inc2;say('Abiria '+k+' wamepanda njiani · tiketi +'+fmt(inc2)+' '+RT.cur);return}
 say('Hakuna kituo wala abiria hapa.')}
-function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/40);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+' · Hali ya basi: '+Math.round(100-S.dmg)+'%</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';{const fn=window.careerFinish||window.submitScore;fn&&fn({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st),dmg:Math.round(S.dmg)})}}
+function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/40-(100-S.sat)/30);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+' · Hali ya basi: '+Math.round(100-S.dmg)+'%</p><p>Furaha ya abiria: '+Math.round(S.sat)+'% · Ukadiriaji: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';{const fn=window.careerFinish||window.submitScore;fn&&fn({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st),dmg:Math.round(S.dmg)})}}
 {const sr=$('sr'),sb=$('sb'),nm=$('nm');for(const k in ROUTES)sr.add(new Option(ROUTES[k].name,k,0,ROUTES[k]===RT));for(const k in BUSES)sb.add(new Option(BUSES[k].name,k,0,BUSES[k]===BS));
 try{nm.value=localStorage.getItem('nm')||''}catch(e){}
 sr.onchange=sb.onchange=()=>{try{localStorage.setItem('nm',nm.value)}catch(e){}location.search='?r='+sr.value+'&b='+sb.value};$('ri').textContent=RT.name+' · km '+KMT+' · '+BS.name}
-function begin(o){o=o||{};S.dmg=o.dmg||0;S.fuel=BS.tank;$('ov').style.display='none';S.run=true;horn();say('Simama stendi ('+STOPS[0].n+') na bonyeza Mlango kupakia abiria.')}
+function begin(o){o=o||{};S.dmg=o.dmg||0;S.fuel=BS.tank;S.seats=new Array(BS.pax).fill(null);S.sat=100;S.log=[];$('ov').style.display='none';S.run=true;horn();say('Simama stendi ('+STOPS[0].n+') na bonyeza Mlango kupakia abiria.')}
 $('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}begin()};
 window.GAME={setBus,begin,RT,ROUTES,BUSES,STOPS,get BS(){return BS}};
 const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
 const CAMS=[{az:0,el:.3,d:15.7},{},{az:Math.PI,el:.2,d:16},{az:Math.PI/2,el:.15,d:17},{az:-Math.PI/2,el:.15,d:17},{az:0,el:1.25,d:26},{}],CNAMES=['Nyuma','Ndani (dereva)','Mbele','Kulia','Kushoto','Juu','Kamera ya kurudi'];
-const orb={az:0,el:0,z:1};let drag=null,ckT=0,lastBeep=0;
+const orb={az:0,el:0,z:1};let drag=null,ckT=0,lastBeep=0,tkT=0;$('r').style.cursor='pointer';$('r').onclick=()=>TK.toggle();
 function camNext(){S.view=(S.view+1)%7;orb.az=0;orb.el=0;orb.z=1;say('Kamera: '+CNAMES[S.view])}
 function togRev(){if(!S.run||S.done)return;if(Math.abs(S.v)>1)return say('Simamisha basi kwanza kubadilisha gia.');S.v=0;S.rev=!S.rev;say(S.rev?'Gia ya kurudi (R): bonyeza gesi kurudi nyuma.':'Gia ya mbele (D).')}
 function beep(){audioInit();if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=1000;g.gain.value=.03;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.15)}
@@ -135,14 +138,14 @@ addEventListener('pointermove',e=>{if(drag&&S.view!=1&&S.view!=6){orb.az-=(e.cli
 $('c').addEventListener('wheel',e=>{orb.z=Math.max(.5,Math.min(2.2,orb.z*(1+e.deltaY*.001)))},{passive:true});
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
-if(S.run&&!S.done){S.t+=dt;S.cd-=dt;S.shake=Math.max(0,S.shake-dt);S.wx+=((WET&&S.t>RT0&&S.t<RT0+110?1:0)-S.wx)*Math.min(1,dt*.4);
+if(S.run&&!S.done){S.t+=dt;S.cd-=dt;S.sat=Math.min(100,S.sat+.15*dt);S.shake=Math.max(0,S.shake-dt);S.wx+=((WET&&S.t>RT0&&S.t<RT0+110?1:0)-S.wx)*Math.min(1,dt*.4);
 const av0=Math.abs(S.v);HZ.forEach(h=>{const ds=h.s-(S.s+BS.len/2-3);
 if(h.type=='bump'&&!h.warn&&ds>0&&ds<45&&S.v>12){h.warn=true;say('Matuta mbele: punguza mwendo!')}
 if(Math.abs(ds)<1.2&&!h.hit&&(h.type=='bump'||Math.abs(h.d-S.d)<1.9)){h.hit=true;
-if(av0>(h.type=='bump'?9:7)){S.dmg=Math.min(100,S.dmg+(h.type=='bump'?3:2)+av0*.2);S.shake=.5;thud();say(h.type=='bump'?'Tuta! Basi limeharibika kidogo.':'Shimo! Punguza mwendo.')}}
+if(av0>(h.type=='bump'?9:7)){S.dmg=Math.min(100,S.dmg+(h.type=='bump'?3:2)+av0*.2);S.shake=.5;thud();say(h.type=='bump'?'Tuta! Basi limeharibika kidogo.':'Shimo! Punguza mwendo.');sat(-3,'Abiria wanalalamika: barabara mbovu')}}
 if(Math.abs(ds)>8)h.hit=false});
 if(S.wait>0){if(Math.abs(S.v)<1.5){S.wait-=dt;if(S.wait<=0){const p=S.bp;p.cleared=true;if(p.bar)p.bar.visible=false;S.money-=RT.borderFee||0;let m='Mpaka umevukwa! Ada: '+fmt(RT.borderFee||0)+' '+RT.cur+'.';
-if(S.pax.length&&Math.random()<.3){const j=Math.floor(Math.random()*S.pax.length),x=S.pax.splice(j,1)[0];S.cargo-=x.bags;m+=' Abiria mmoja amekataliwa kuvuka (hati).'}say(m+' Bonyeza E kuendelea.')}}else{S.wait=0;say('Ukaguzi umevunjika: usisogee!')}}
+if(S.pax.length&&Math.random()<.3){const j=Math.floor(Math.random()*S.pax.length),x=S.pax.splice(j,1)[0];S.cargo-=x.bags;if(x.seat>=0)S.seats[x.seat]=null;S.money-=x.fare;m+=' Abiria mmoja amekataliwa kuvuka (hati).'}say(m+' Bonyeza E kuendelea.')}}else{S.wait=0;say('Ukaguzi umevunjika: usisogee!')}}
 STOPS.forEach(p=>{if(p.border&&!p.cleared&&S.s>p.s+20){S.s=p.s+20;if(S.v>3){S.dmg=Math.min(100,S.dmg+5);S.shake=.5;thud();say('Kizuizi cha mpaka! Simama kwanza.')}S.v=0}});
 const steer=(K.R?1:0)-(K.L?1:0),off=Math.abs(S.d)>6.2;
 const sg=Math.sign(S.v),av=Math.abs(S.v),thr=K.G&&S.fuel>0;
@@ -154,11 +157,12 @@ const av2=Math.abs(S.v);S.d=Math.max(-10,Math.min(10,S.d+steer*dt*(av2>.5?1.2+av
 if(S.s<40){S.s=40;S.v=Math.max(S.v,0)}
 if(S.rev&&S.v<-.2&&performance.now()-lastBeep>900){lastBeep=performance.now();beep()}
 if(S.s>L-60){S.s=L-60;S.v=0}
-traf.forEach(t=>{t.s+=t.v*dt;if(t.s<0)t.s=L;if(t.s>L)t.s=0;
-if(S.cd<=0&&Math.abs(t.s-S.s)<t.len/2+BS.len/2&&Math.abs(t.d-S.d)<2.5){S.v*=.2;S.crashes++;S.dmg=Math.min(100,S.dmg+8);S.shake=.6;S.cd=1.5;t.s+=t.opp?-70:50;say('Ajali! Kuwa mwangalifu.');thud()}});}
+const ev=TRF.update(dt,{s:S.s,d:S.d,v:S.v,len:BS.len,t:S.t});
+if(ev.crash){S.v*=.2;S.crashes++;S.dmg=Math.min(100,S.dmg+8);S.shake=.6;say('Ajali! Kuwa mwangalifu.');thud();sat(-8,'Abiria wameogopa ajali')}
+if(ev.red){S.money-=RT.fine;sat(-10,'Dereva amepita taa nyekundu');say('Umepita taa nyekundu! Faini '+fmt(RT.fine)+' '+RT.cur)}
+if(ev.ped){S.v*=.1;S.crashes++;S.dmg=Math.min(100,S.dmg+15);S.shake=.8;S.money-=RT.fine*10;sat(-40,'Dereva amemgonga mtembea kwa miguu!');say('Umemgonga mtembea kwa miguu! Faini '+fmt(RT.fine*10)+' '+RT.cur);thud()}}
 const s=S.s,x=cx(s)+S.d,yaw=-Math.atan(dxs(s))-((K.R?1:0)-(K.L?1:0))*.12;
 cgGrp.children.forEach((b,i)=>b.visible=i<Math.ceil(10*S.cargo/BS.cargo));player.position.set(x,0,-s);player.rotation.y=yaw;player.rotation.z=(Math.abs(S.d)>6.2?Math.sin(now/40)*.01*S.v:0);
-traf.forEach(t=>{t.g.position.set(cx(t.s)+t.d,0,-t.s);t.g.rotation.y=-Math.atan(dxs(t.s))+(t.opp?Math.PI:0)});
 const fx=-Math.sin(yaw),fz=-Math.cos(yaw);
 if(S.view==1){const k=BS.len/2-1.4,rx=-fz*.6,rz=fx*.6;cam.position.set(x+fx*k+rx,2.5,-s+fz*k+rz);cam.lookAt(x+fx*30+rx,2.3,-s+fz*30+rz)}
 else if(S.view==6){const k=BS.len/2+.3;cam.position.set(x-fx*k,3.9,-s-fz*k);cam.lookAt(x-fx*40,2.2,-s-fz*40)}
@@ -173,9 +177,10 @@ sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6
 sun.intensity=.15+.8*day;hemi.intensity=.18+.5*day;spot.intensity=day<.3?2.2:0;
 const nx=STOPS.find(p=>p.s>S.s+10)||STOPS[STOPS.length-1];
 $('l').innerHTML='<b>'+Math.round(Math.abs(S.v)*3.6)+'</b> km/h '+(S.rev?'<b style="color:#ff8a80">R</b>':'D')+'<br>Mafuta: '+Math.round(S.fuel)+' L<br>Saa: '+String(Math.floor(hr)).padStart(2,'0')+':'+String(Math.floor(hr%1*60)).padStart(2,'0');
-$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Mizigo: '+S.cargo+'/'+BS.cargo+'<br>Ajali: '+S.crashes+'<br>Hali: '+Math.round(100-S.dmg)+'%'+(S.wx>.3?' 🌧':'');
+$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Mizigo: '+S.cargo+'/'+BS.cargo+'<br>Ajali: '+S.crashes+'<br>Hali: '+Math.round(100-S.dmg)+'%<br>Furaha: '+Math.round(S.sat)+'% (T)'+(S.wx>.3?' 🌧':'');
 $('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)));$('pf').style.width=Math.max(0,Math.min(100,KM(S.s)/KMT*100))+'%';if(S.wait>0)$('nx').textContent='Ukaguzi wa mpaka: '+Math.ceil(S.wait)+'s';
 if(S.wx>.02){const a=rg.attributes.position.array;for(let i=0;i<NR;i++){const k=i*6;a[k+1]-=30*dt;a[k+4]-=30*dt;if(a[k+1]<-10){a[k+1]+=40;a[k+4]+=40}}rg.attributes.position.needsUpdate=true}
+if(now-tkT>500){tkT=now;TK.render(S,BS,STOPS)}
 updEngine(dt,K.G&&S.fuel>0,S.run&&!S.done);R.render(scene,cam)}
 requestAnimationFrame(loop);
 </script><script type="module" src="./career.js"></script>
