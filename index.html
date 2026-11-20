@@ -33,7 +33,8 @@ canvas{display:block;width:100%;height:100%}
 <script src="./data.js"></script>
 <script src="./vehicles.js"></script>
 <script>
-const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),RT=ROUTES[Q.get('r')]||ROUTES.dodoma,BS=BUSES[Q.get('b')]||BUSES.scania,KMT=RT.km,L=KMT*20,TANK=BS.tank;
+const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search),RT=ROUTES[Q.get('r')]||ROUTES.dodoma,KMT=RT.km,L=KMT*20;
+let BS=BUSES[Q.get('b')]||BUSES.scania;
 const STOPS=RT.stops.map(a=>({n:a[0],km:a[1],s:100+a[1]/KMT*(L-200),done:false,border:a[2]=='border'}));
 const KM=s=>(s-100)/(L-200)*KMT;
 const [A1,W1,A2,W2]=RT.curve,cx=s=>A1*Math.sin(s/W1)+A2*Math.sin(s/W2+1),dxs=s=>cx(s+1)-cx(s);
@@ -63,11 +64,13 @@ for(let i=0;i<22;i++){const s=250+Math.random()*(L-500);if(STOPS.some(p=>Math.ab
 for(let k=0;k<n;k++){const b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,1.3),M(pc[k%5])),h=new THREE.Mesh(new THREE.SphereGeometry(.25),M(0x5a3a28));b.position.set(k*.8,.65,0);h.position.set(k*.8,1.5,0);g.add(b,h)}
 g.position.set(cx(s)-8,0,-s);scene.add(g);groups.push({s,n,g,taken:false})}
 // vehicles
-const player=makeBus(BS,STOPS[STOPS.length-1].n.toUpperCase());scene.add(player);
-const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);spot.position.set(0,1.3,-BS.len/2);const tgt=new THREE.Object3D();tgt.position.set(0,0,-40);player.add(spot,tgt);spot.target=tgt;
+const player=new THREE.Group();scene.add(player);let body;
+const spot=new THREE.SpotLight(0xfff2cc,0,130,.5,.5);const tgt=new THREE.Object3D();tgt.position.set(0,0,-40);player.add(spot,tgt);spot.target=tgt;
 const cgGrp=new THREE.Group();for(let i=0;i<10;i++){const b=B(.9,.6,1.2,M([0x8a5a2b,0x2b5a8a,0x666666,0xaa3333][i%4]));b.position.set(i%2?.6:-.6,3.95,-2.8+Math.floor(i/2)*1.8);b.visible=false;cgGrp.add(b)}player.add(cgGrp);
+function setBus(bs){BS=bs;if(body)player.remove(body);body=makeBus(bs,STOPS[STOPS.length-1].n.toUpperCase());player.add(body);spot.position.set(0,1.3,-bs.len/2);
 // modeli ya .glb (hiari): weka faili kwenye models/ na andika njia kwenye data.js (glb: 'models/scania.glb')
-if(BS.glb)useGlb(player,BS.glb,BS.len,BS.glbYaw,[cgGrp,tgt],h=>cgGrp.children.forEach(b=>b.position.y=h+.4));
+if(bs.glb)useGlb(body,bs.glb,bs.len,bs.glbYaw,[],h=>cgGrp.children.forEach(b=>b.position.y=h+.4))}
+setBus(BS);
 const traf=[];function mkT(opp,truck){const V=makeVeh(truck?(Math.random()<.5?'lorry':'semi'):['sedan','suv','pickup','matatu'][Math.random()*4|0]);scene.add(V.g);
 traf.push({g:V.g,opp,len:V.len,s:Math.random()*L,d:opp?3:-3,v:opp?-(14+Math.random()*6):7+Math.random()*3})}
 for(let i=0;i<14;i++)mkT(true,i%3==0);for(let i=0;i<7;i++)mkT(false,true);
@@ -83,7 +86,7 @@ const NR=700,rp=new Float32Array(NR*6);for(let i=0;i<NR;i++){const x=(Math.rando
 const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
 const rain=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xaec6e0,transparent:true,opacity:0}));rain.frustumCulled=false;cam.add(rain);
 // state
-const S={s:70,d:-6.5,v:0,money:0,fuel:TANK,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0,dmg:0,shake:0,wx:0,wait:0,bp:null,cargo:0},K={};
+const S={s:70,d:-6.5,v:0,money:0,fuel:BS.tank,crashes:0,off:0,t:0,pax:[],done:false,run:false,cd:0,view:0,dmg:0,shake:0,wx:0,wait:0,bp:null,cargo:0},K={};
 const kmap={KeyW:'G',ArrowUp:'G',KeyS:'B',ArrowDown:'B',KeyA:'L',ArrowLeft:'L',KeyD:'R',ArrowRight:'R',Space:'B'};
 addEventListener('keydown',e=>{if(e.target.tagName=='INPUT'||e.target.tagName=='SELECT')return;if(kmap[e.code])K[kmap[e.code]]=1;if(e.code=='KeyE')doors();if(e.code=='KeyH')horn();if(e.code=='KeyC')S.view^=1;if(e.code=='KeyM')muted=!muted});
 addEventListener('keyup',e=>{if(kmap[e.code])K[kmap[e.code]]=0});
@@ -107,17 +110,19 @@ const i=STOPS.findIndex(p=>Math.abs(p.s-S.s)<30);
 if(i>=0){const p=STOPS[i];if(p.border&&!p.cleared){if(S.wait>0)return say('Subiri ukaguzi...');S.wait=9;S.bp=p;return say('Ukaguzi wa mpaka umeanza (hati za abiria). Usisogee, subiri sekunde 9.')}if(p.done)return say('Umeshahudumia kituo hiki.');p.done=true;
 const out=S.pax.filter(x=>x.to==i);S.pax=S.pax.filter(x=>x.to!=i);let inc=0;out.forEach(x=>{S.cargo-=x.bags;inc+=Math.round((p.km-x.from)*RT.rate*(1+.15*x.bags)/RT.round)*RT.round});S.money+=inc;
 let n=0;if(i<STOPS.length-1){n=Math.min(BS.pax-S.pax.length,8+Math.floor(Math.random()*18));for(let k=0;k<n;k++)S.pax.push(mkP(p.km,i+1+Math.floor(Math.random()*(STOPS.length-1-i))))}
-const lit=TANK-S.fuel,cost=Math.round(lit*RT.fuelPrice/RT.round)*RT.round;S.fuel=TANK;S.money-=cost;
+const lit=BS.tank-S.fuel,cost=Math.round(lit*RT.fuelPrice/RT.round)*RT.round;S.fuel=BS.tank;S.money-=cost;
 say(p.n+': wameshuka '+out.length+', wamepanda '+n+' · mapato +'+fmt(inc)+' · mafuta -'+fmt(cost)+' '+RT.cur);if(i==STOPS.length-1)finish();return}
 const g=groups.find(q=>!q.taken&&Math.abs(q.s-S.s)<14&&S.d<-3);
 if(g){const k=Math.min(g.n,BS.pax-S.pax.length);if(k<=0)return say('Basi limejaa!');g.taken=true;scene.remove(g.g);const nx=STOPS.findIndex(p=>p.s>g.s);
 for(let j=0;j<k;j++)S.pax.push(mkP(KM(g.s),nx+Math.floor(Math.random()*(STOPS.length-nx))));say('Abiria '+k+' wamepanda njiani.');return}
 say('Hakuna kituo wala abiria hapa.')}
-function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/40);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+' · Hali ya basi: '+Math.round(100-S.dmg)+'%</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';window.submitScore&&window.submitScore({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st)})}
+function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/40);$('ov').style.display='flex';$('ov').innerHTML='<div><h1>Umefika '+STOPS[STOPS.length-1].n+'!</h1><p>Mapato halisi: <b>'+fmt(S.money)+' '+RT.cur+'</b></p><p>Muda wa safari: '+Math.floor(S.t/60)+'m '+Math.floor(S.t%60)+'s · Ajali: '+S.crashes+' · Hali ya basi: '+Math.round(100-S.dmg)+'%</p><p>Ukadiriaji wa abiria: <b>'+'★'.repeat(Math.round(st))+'☆'.repeat(5-Math.round(st))+'</b></p><div id="lb"></div><button onclick="location.reload()">Safari Mpya</button></div>';{const fn=window.careerFinish||window.submitScore;fn&&fn({route:RT.id,rname:RT.name,cur:RT.cur,money:Math.round(S.money),crashes:S.crashes,secs:Math.floor(S.t),stars:Math.round(st),dmg:Math.round(S.dmg)})}}
 {const sr=$('sr'),sb=$('sb'),nm=$('nm');for(const k in ROUTES)sr.add(new Option(ROUTES[k].name,k,0,ROUTES[k]===RT));for(const k in BUSES)sb.add(new Option(BUSES[k].name,k,0,BUSES[k]===BS));
 try{nm.value=localStorage.getItem('nm')||''}catch(e){}
 sr.onchange=sb.onchange=()=>{try{localStorage.setItem('nm',nm.value)}catch(e){}location.search='?r='+sr.value+'&b='+sb.value};$('ri').textContent=RT.name+' · km '+KMT+' · '+BS.name}
-$('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}$('ov').style.display='none';S.run=true;horn();say('Simama stendi ('+STOPS[0].n+') na bonyeza Mlango kupakia abiria.')};
+function begin(o){o=o||{};S.dmg=o.dmg||0;S.fuel=BS.tank;$('ov').style.display='none';S.run=true;horn();say('Simama stendi ('+STOPS[0].n+') na bonyeza Mlango kupakia abiria.')}
+$('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}begin()};
+window.GAME={setBus,begin,RT,ROUTES,BUSES,STOPS,get BS(){return BS}};
 const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
 let last=performance.now();
 function loop(now){requestAnimationFrame(loop);const dt=Math.min((now-last)/1000,.05);last=now;
@@ -155,5 +160,5 @@ $('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)
 if(S.wx>.02){const a=rg.attributes.position.array;for(let i=0;i<NR;i++){const k=i*6;a[k+1]-=30*dt;a[k+4]-=30*dt;if(a[k+1]<-10){a[k+1]+=40;a[k+4]+=40}}rg.attributes.position.needsUpdate=true}
 updEngine(dt,K.G&&S.fuel>0,S.run&&!S.done);R.render(scene,cam)}
 requestAnimationFrame(loop);
-</script><script type="module" src="./supabase.js"></script>
+</script><script type="module" src="./career.js"></script>
 </body></html>
