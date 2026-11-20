@@ -5,6 +5,7 @@ Mchezo wa 3D wa mabasi ya mkoani. Hauhitaji build: ni faili tuli (Vercel: Framew
 ## Faili
 - `index.html` mchezo (Three.js kutoka CDN)
 - `data.js` njia, vituo, mabasi (ongeza njia/basi hapa)
+- `vehicles.js` mabasi na magari ya barabarani (yanajengwa kwa msimbo)
 - `supabase.js` + `config.js` leaderboard
 - `supabase/schema.sql` jedwali la `scores` na RLS
 
@@ -17,3 +18,4 @@ Kituo chenye `'border'` kama kipengee cha tatu ni mpaka: simama, bonyeza E, subi
 2. Kwenye `data.js` ondoa maoni kwenye `glb: 'models/scania.glb'` ya basi hilo.
 3. Ikiwa basi linaelekea nyuma, weka `glbYaw: Math.PI`. Ukubwa unarekebishwa kiotomatiki kulingana na `len`.
 Basi likishindwa kupakia, mchezo unatumia basi la msingi.
+Magari ya barabarani (sedan, suv, pickup, matatu, lorry, semi) yanaweza kubadilishwa vivyo hivyo kupitia `TRAFFIC_GLB` kwenye `data.js`.
