@@ -52,7 +52,7 @@ async function act(a, i) {
   if (a === 'li' || a === 'su') {
     const email = $('#em').value.trim(), password = $('#pw').value, name = $('#nn').value.trim();
     if (name) try { localStorage.setItem('nm', name) } catch (e) {}
-    const r = a === 'li' ? await db.auth.signInWithPassword({ email, password }) : await db.auth.signUp({ email, password });
+    const r = a === 'li' ? await db.auth.signInWithPassword({ email, password }) : await db.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
     if (r.error) return login(r.error.message);
     if (!r.data.session) return login('Angalia barua pepe ili kuthibitisha akaunti, kisha bonyeza Ingia.');
     return boot();
