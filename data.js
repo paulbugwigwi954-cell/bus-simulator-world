@@ -1,16 +1,16 @@
 // Njia (routes) na mabasi (buses). Kuongeza nchi/njia/basi: ongeza kipengee hapa tu.
-// Kituo chenye 'border' kama kipengee cha tatu ni mpaka (ukaguzi wa hati + ada: borderFee).
+// Kituo chenye 'border' kama kipengee cha tatu ni mpaka (ukaguzi wa hati + ada: borderFee). fine = faini ya taa nyekundu.
 window.ROUTES = {
-  dodoma: { id: 'dar-dodoma', name: 'Dar es Salaam → Dodoma', km: 450, cur: 'TZS', rate: 78, round: 100, fuelPrice: 1900, rain: .25, holes: 18,
+  dodoma: { id: 'dar-dodoma', fine: 30000, name: 'Dar es Salaam → Dodoma', km: 450, cur: 'TZS', rate: 78, round: 100, fuelPrice: 1900, rain: .25, holes: 18,
     hour: 15.5, ground: 0x7d8a3c, leaf: 0x4d7a2a, curve: [55, 650, 22, 210],
     stops: [['Ubungo (Dar)', 0], ['Chalinze', 100], ['Morogoro', 195], ['Gairo', 305], ['Kibaigwa', 385], ['Dodoma', 450]] },
-  mombasa: { id: 'nairobi-mombasa', name: 'Nairobi → Mombasa', km: 485, cur: 'KES', rate: 3.1, round: 10, fuelPrice: 190, rain: .3, holes: 12,
+  mombasa: { id: 'nairobi-mombasa', fine: 1500, name: 'Nairobi → Mombasa', km: 485, cur: 'KES', rate: 3.1, round: 10, fuelPrice: 190, rain: .3, holes: 12,
     hour: 13.5, ground: 0x9a7a45, leaf: 0x6b7f2f, curve: [30, 900, 14, 300],
     stops: [['Nairobi', 0], ['Emali', 150], ['Mtito Andei', 235], ['Voi', 325], ['Mariakani', 450], ['Mombasa', 485]] },
-  mbale: { id: 'kampala-mbale', name: 'Kampala → Mbale', km: 250, cur: 'UGX', rate: 110, round: 500, fuelPrice: 5200, rain: .6, holes: 30,
+  mbale: { id: 'kampala-mbale', fine: 40000, name: 'Kampala → Mbale', km: 250, cur: 'UGX', rate: 110, round: 500, fuelPrice: 5200, rain: .6, holes: 30,
     hour: 14, ground: 0x5f8a3a, leaf: 0x2f6b2a, curve: [40, 500, 25, 180],
     stops: [['Kampala', 0], ['Jinja', 80], ['Iganga', 125], ['Tororo', 210], ['Mbale', 250]] },
-  namanga: { id: 'arusha-nairobi', name: 'Arusha → Nairobi (Namanga)', km: 270, cur: 'KES', rate: 11, round: 10, fuelPrice: 190, borderFee: 2000, rain: .3, holes: 20,
+  namanga: { id: 'arusha-nairobi', fine: 1500, name: 'Arusha → Nairobi (Namanga)', km: 270, cur: 'KES', rate: 11, round: 10, fuelPrice: 190, borderFee: 2000, rain: .3, holes: 20,
     hour: 7.5, ground: 0xa89060, leaf: 0x7a8a3a, curve: [35, 700, 18, 250],
     stops: [['Arusha', 0], ['Longido', 85], ['Namanga (Mpaka)', 110, 'border'], ['Kajiado', 190], ['Nairobi', 270]] }
 };
