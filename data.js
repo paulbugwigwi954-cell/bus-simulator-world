@@ -16,12 +16,12 @@ window.ROUTES = {
 };
 // Modeli za magari ya barabarani (hiari): weka faili kwenye models/ kisha ondoa maoni
 window.TRAFFIC_GLB = { /* sedan: 'models/sedan.glb', suv: 'models/suv.glb', pickup: 'models/pickup.glb', matatu: 'models/matatu.glb', lorry: 'models/lorry.glb', semi: 'models/semi.glb' */ };
-// brand = jina la kampuni la kubuni linaloonekana kwenye basi
+// brand = jina la kampuni la kubuni; price = bei kwa TZS (lazima ilingane na function bus_price kwenye Supabase)
 window.BUSES = {
-  scania: { id: 'scania', name: 'Scania Marcopolo Paradiso', brand: 'SIMBA COACH', len: 12.9, col: 0xf2f2ee, lower: 0x2a2e34,
+  scania: { id: 'scania', name: 'Scania Marcopolo Paradiso', brand: 'SIMBA COACH', price: 25000000, len: 12.9, col: 0xf2f2ee, lower: 0x2a2e34,
     stripes: [[0xc0272d, 1.55, .2], [0x111111, 1.32, .08]], axles: [-3.9, 2.8, 4.4], rake: .18, ac: false,
     vmax: 30, acc: 5, tank: 240, fuel: .024, pax: 54, cargo: 60, /* glb: 'models/scania.glb', glbYaw: 0, */ hz: 36, gears: [0, 7, 13, 19, 25], horn: [350, 440] },
-  yutong: { id: 'yutong', name: 'Yutong ZK6122', brand: 'TEMBO LINES', len: 12.0, col: 0xf6f6f6, lower: 0x37424d,
+  yutong: { id: 'yutong', name: 'Yutong ZK6122', brand: 'TEMBO LINES', price: 12000000, len: 12.0, col: 0xf6f6f6, lower: 0x37424d,
     stripes: [[0x1565c0, 1.6, .24], [0x2e9e46, 1.38, .1]], axles: [-3.5, 3.4], rake: .05, ac: true,
     vmax: 27, acc: 4.6, tank: 200, fuel: .02, pax: 50, cargo: 50, /* glb: 'models/yutong.glb', glbYaw: 0, */ hz: 46, gears: [0, 6, 12, 18, 23], horn: [420, 520] }
 };
