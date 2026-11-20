@@ -3,10 +3,12 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
 const ok = !SUPABASE_URL.includes("YOUR-PROJECT");
 const db = ok ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+export { db };
+window.sb = db;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 window.submitScore = async function (r) {
-  const box = document.getElementById("lb");
+  const box = r.box || document.getElementById("lb");
   if (!box) return;
   if (!db) { box.innerHTML = "<p>Leaderboard haijawashwa (weka config.js).</p>"; return; }
   box.innerHTML = "<p>Inahifadhi alama...</p>";
