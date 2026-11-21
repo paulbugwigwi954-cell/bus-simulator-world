@@ -19,21 +19,23 @@ window.TRF = (function () {
   }
   function spawn(kind, lane, opp, vt) {
     const small_ = kind == 'boda' || kind == 'bajaj', V = small_ ? small(kind) : X.makeVeh(kind), dir = opp ? -1 : 1;
-    let s = 0; for (let n = 0; n < 60; n++) { s = 260 + Math.random() * (X.L - 420); if (!veh.some(o => Math.abs(o.d - lane) < 2 && Math.abs(o.s - s) < 45)) break }
-    const me = { g: V.g, len: V.len, w: V.w || WID[kind] || 2, kind, small: small_, dir, s, d: lane, td: lane, v: dir * vt * .9, vt, ov: 0, ref: null, cdw: 0 };
+    let s = X.s0 + 250; for (let n = 0; n < 60; n++) { s = X.s0 + 250 + Math.random() * 1400; if (X.gaps.some(g => s > g[0] - 60 && s < g[1] + 60)) continue; if (!veh.some(o => Math.abs(o.d - lane) < 2 && Math.abs(o.s - s) < 45)) break }
+    const me = { lane, g: V.g, len: V.len, w: V.w || WID[kind] || 2, kind, small: small_, dir, s, d: lane, td: lane, v: dir * vt * .9, vt, ov: 0, ref: null, cdw: 0 };
     X.scene.add(V.g); veh.push(me);
   }
+const place = me => { const x = X.cx(me.s) + me.d, z = -me.s; me.g.position.set(x, X.H(x, z), z); me.g.rotation.y = -Math.atan(X.dxs(me.s)) + (me.dir < 0 ? Math.PI : 0) };
+  function respawn(me, P, dist) { for (let n = 0; n < 12; n++) { let s = P.s + dist + n * 60; for (const g of X.gaps) if (s > g[0] - 60 && s < g[1] + 60) s = g[1] + 80; if (!veh.some(o => o !== me && Math.abs(o.d - me.lane) < 2 && Math.abs(o.s - s) < 50)) { me.s = s; break } } me.d = me.td = me.lane; me.ov = 0; me.ref = null; me.v = me.dir * me.vt * .9 }
   function init(ctx) {
     X = ctx; veh = []; lights = [];
     const wm = BM(0xf0f0f0), pole = M(0x333333), pcol = [0xd33, 0x39c, 0xe9b, 0x3a5, 0xfc3];
     X.STOPS.forEach((p, i) => {
-      const sl = p.s + 110; if (i == X.STOPS.length - 1 || sl > X.L - 140) return;
-      const li = { s: sl, off: Math.random() * CYC, mr: BM(0x401010), my: BM(0x403000), mg: BM(0x083010), peds: [], pf: -1e9, cyc: -1 }, xc = X.cx(sl);
-      for (let k = 0; k < 10; k++) { const z = B(.5, .03, 3.2, wm); z.position.set(xc - 5 + k * 1.1, .05, -sl); X.scene.add(z) }
+      const sl = p.s + 110; if (i == X.STOPS.length - 1 || sl > X.L - 140 || X.gaps.some(g => sl > g[0] - 60 && sl < g[1] + 60)) return;
+      const li = { s: sl, off: Math.random() * CYC, mr: BM(0x401010), my: BM(0x403000), mg: BM(0x083010), peds: [], pf: -1e9, cyc: -1 }, xc = X.cx(sl), y0 = X.H(xc, -sl); li.y0 = y0;
+      for (let k = 0; k < 10; k++) { const z = B(.5, .03, 3.2, wm); z.position.set(xc - 5 + k * 1.1, y0 + .06, -sl); X.scene.add(z) }
       [-1, 1].forEach(sd => {
-        const pl = B(.25, 5, .25, pole); pl.position.set(xc + sd * 7.5, 2.5, -sl); X.scene.add(pl);
-        const hd = B(.6, 1.7, .5, M(0x111111)); hd.position.set(xc + sd * 7.5, 5.2, -sl); X.scene.add(hd);
-        [[li.mr, 5.7], [li.my, 5.2], [li.mg, 4.7]].forEach(a => { const l = new T.Mesh(new T.SphereGeometry(.22, 8, 6), a[0]); l.position.set(xc + sd * 7.5, a[1], -sl + .3); X.scene.add(l) });
+        const pl = B(.25, 5, .25, pole); pl.position.set(xc + sd * 7.5, y0 + 2.5, -sl); X.scene.add(pl);
+        const hd = B(.6, 1.7, .5, M(0x111111)); hd.position.set(xc + sd * 7.5, y0 + 5.2, -sl); X.scene.add(hd);
+        [[li.mr, 5.7], [li.my, 5.2], [li.mg, 4.7]].forEach(a => { const l = new T.Mesh(new T.SphereGeometry(.22, 8, 6), a[0]); l.position.set(xc + sd * 7.5, y0 + a[1], -sl + .3); X.scene.add(l) });
       });
       for (let k = 0; k < 3; k++) { const g = new T.Group(), b = new T.Mesh(new T.CylinderGeometry(.25, .28, 1.2, 8), M(pick(pcol))), h = new T.Mesh(new T.SphereGeometry(.22, 8, 6), M(0x5a3a28)); b.position.y = .6; h.position.y = 1.45; g.add(b, h); X.scene.add(g); li.peds.push({ g, k, hit: false, x: 9 }) }
       lights.push(li);
@@ -43,7 +45,7 @@ window.TRF = (function () {
     for (let i = 0; i < 5; i++) spawn(pick(['lorry', 'semi']), -3, false, 7 + Math.random() * 2);
     for (let i = 0; i < 8; i++) spawn(pick(cars), -3, false, 13 + Math.random() * 4);
     for (let i = 0; i < 4; i++) spawn(pick(['boda', 'bajaj']), -5.4, false, 9 + Math.random() * 3);
-    veh.forEach(me => { me.g.position.set(X.cx(me.s) + me.d, 0, -me.s); me.g.rotation.y = -Math.atan(X.dxs(me.s)) + (me.dir < 0 ? Math.PI : 0) });
+    veh.forEach(place);
   }
   function update(dt, P) {
     cd -= dt; const ev = {}, pl = { s: P.s, d: P.d, v: P.v, len: P.len, w: 2.55 };
@@ -51,7 +53,7 @@ window.TRF = (function () {
       const ph = (P.t + li.off) % CYC, n = Math.floor((P.t + li.off) / CYC), side = n % 2 ? 1 : -1, xc = X.cx(li.s);
       li.mr.color.setHex(ph >= RED ? 0xff2020 : 0x401010); li.my.color.setHex(ph >= GRN && ph < RED ? 0xffc400 : 0x403000); li.mg.color.setHex(ph < GRN ? 0x22dd44 : 0x083010);
       if (n !== li.cyc) { li.cyc = n; li.peds.forEach(p => p.hit = false) }
-      li.peds.forEach(p => { const f = clamp((ph - RED - p.k * .8) / WALK, 0, 1); p.x = -side * 9 + side * 18 * f; p.g.position.set(xc + p.x, 0, -(li.s + (p.k - 1) * .9)) });
+      li.peds.forEach(p => { const f = clamp((ph - RED - p.k * .8) / WALK, 0, 1); p.x = -side * 9 + side * 18 * f; p.g.position.set(xc + p.x, li.y0, -(li.s + (p.k - 1) * .9)) });
       const front = P.s + P.len / 2, line = li.s - 6;
       if (li.pf > -1e8 && li.pf < line && front >= line && ph >= RED && P.v > 2) ev.red = true;
       li.pf = front;
@@ -80,9 +82,10 @@ window.TRF = (function () {
       const dv = sp - vl, ss = 6 + Math.max(0, sp * 1.3 + sp * dv / (2 * Math.sqrt(2.5 * 3.5)));
       let acc = clamp(2.5 * (1 - Math.pow(sp / vt, 4) - (gap < 1e8 ? Math.pow(ss / Math.max(gap, .3), 2) : 0)), -9, 2.5), nsp = Math.max(0, sp + acc * dt); if (gap < .4) nsp = 0;
       me.v = dir * nsp; me.s += me.v * dt; me.d += clamp(me.td - me.d, -2.5 * dt, 2.5 * dt);
-      if (me.s < 30) { me.s = X.L - 100; me.ov = 0 } if (me.s > X.L - 50) { me.s = 130; me.ov = 0 }
+      if (dir > 0) { if (me.s < P.s - 300 || me.s > X.L - 120) respawn(me, P, 500 + Math.random() * 900) } else if (me.s < P.s - 350 || me.s > P.s + 1800) respawn(me, P, 700 + Math.random() * 800);
+      for (const g of X.gaps) { if (dir > 0 && me.s > g[0] - 8 && me.s < g[1] + 5) me.s = g[1] + 12; if (dir < 0 && me.s < g[1] + 8 && me.s > g[0] - 5) me.s = g[0] - 12 }
       if (cd <= 0 && Math.abs(me.s - pl.s) < (me.len + pl.len) / 2 && Math.abs(me.d - pl.d) < (me.w + 2.55) / 2 - .1) { ev.crash = true; cd = 1.5; me.s -= 90; me.v = dir * me.vt * .5 }
-      me.g.position.set(X.cx(me.s) + me.d, 0, -me.s); me.g.rotation.y = -Math.atan(X.dxs(me.s)) + (dir < 0 ? Math.PI : 0);
+      place(me);
     });
     return ev;
   }
