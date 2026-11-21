@@ -1,5 +1,5 @@
 import { db } from './supabase.js';
-const G = window.GAME, BUSES = G.BUSES, ROUTES = G.ROUTES;
+const G = window.GAME, BUSES = G.BUSES;
 const $ = s => document.querySelector(s), fmt = n => Math.round(n).toLocaleString('en-US');
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const hx = n => '#' + n.toString(16).padStart(6, '0'), num = h => parseInt(h.slice(1), 16);
@@ -23,7 +23,7 @@ function login(err) {
 }
 function home(t) {
   const b = garage.find(x => x.id === sel), lvl = 1 + Math.floor(profile.xp / 500);
-  cm.innerHTML = '<div class="box"><h2>' + esc(profile.name) + ' · Kiwango ' + lvl + '</h2><div class="row"><span>Pesa</span><b>TZS ' + fmt(profile.cash) + '</b></div><div class="row"><span>Deni (mkopo)</span><b>TZS ' + fmt(profile.loan) + '</b></div><div class="row"><span>Safari zilizokamilika</span><b>' + profile.trips + '</b></div><p>Njia: <select id="rt">' + Object.keys(ROUTES).map(k => '<option value="' + k + '"' + (ROUTES[k] === G.RT ? ' selected' : '') + '>' + esc(ROUTES[k].name) + '</option>').join('') + '</select></p><p>Basi: <b>' + (b ? esc(BUSES[b.model].name) + ' (hali ' + b.condition + '%)' : 'huna') + '</b></p><p class="m">' + esc(t || '') + '</p><div class="bt"><button data-a="go2">Anza safari</button><button class="s" data-a="gr">Garage</button><button class="s" data-a="ln">Mkopo</button><button class="s" data-a="lo">Toka</button></div></div>';
+  cm.innerHTML = '<div class="box"><h2>' + esc(profile.name) + ' · Kiwango ' + lvl + '</h2><div class="row"><span>Pesa</span><b>TZS ' + fmt(profile.cash) + '</b></div><div class="row"><span>Deni (mkopo)</span><b>TZS ' + fmt(profile.loan) + '</b></div><div class="row"><span>Safari zilizokamilika</span><b>' + profile.trips + '</b></div><p>Njia: <b>' + esc(G.RT.name) + '</b> · ' + G.RT.km + ' km <button class="s" data-a="map">Ramani</button></p><p>Basi: <b>' + (b ? esc(BUSES[b.model].name) + ' (hali ' + b.condition + '%)' : 'huna') + '</b></p><p class="m">' + esc(t || '') + '</p><div class="bt"><button data-a="go2">Anza safari</button><button class="s" data-a="gr">Garage</button><button class="s" data-a="ln">Mkopo</button><button class="s" data-a="lo">Toka</button></div></div>';
 }
 function garageView(t) {
   const rows = garage.map(b => { const m = BUSES[b.model], l = lvOf(b), cost = (100 - b.condition) * 30000;
@@ -41,7 +41,7 @@ function loanView(t) {
 }
 async function finish(r) {
   const box = document.getElementById('lb'); if (box) box.innerHTML = '<div id="cr">Inahifadhi safari...</div><div id="lb2"></div>';
-  const x = await db.rpc('finish_trip', { p_bus: trip && trip.bus, p_route: r.route, p_cur: r.cur, p_money: r.money, p_secs: r.secs, p_crashes: r.crashes, p_dmg: r.dmg, p_stars: r.stars });
+  const x = await db.rpc('finish_trip', { p_bus: trip && trip.bus, p_route: r.route, p_cur: r.cur, p_money: r.money, p_secs: r.secs, p_crashes: r.crashes, p_dmg: r.dmg, p_stars: r.stars, p_km: r.km });
   const cr = document.getElementById('cr');
   if (cr) cr.innerHTML = x.error ? 'Imeshindwa kuhifadhi safari: ' + esc(tr(x.error.message)) : '<b>Mapato ya safari: TZS ' + fmt(x.data.net) + '</b><br>Pesa yako: TZS ' + fmt(x.data.cash) + ' · Kiwango ' + x.data.level + ' · Hali ya basi ' + x.data.condition + '%';
   if (window.submitScore) window.submitScore(Object.assign({}, r, { box: document.getElementById('lb2') }));
@@ -57,6 +57,7 @@ async function act(a, i) {
     if (!r.data.session) return login('Angalia barua pepe ili kuthibitisha akaunti, kisha bonyeza Ingia.');
     return boot();
   }
+  if (a === 'map') return MAP.open();
   if (a === 'fd') return cm.remove();
   if (a === 'lo') { await db.auth.signOut(); return location.reload() }
   if (a === 'hm') return home();
@@ -88,7 +89,6 @@ async function boot() {
 if (db) {
   document.body.appendChild(cm);
   cm.addEventListener('click', e => { const t = e.target.closest('[data-a]'); if (t) act(t.dataset.a, t.dataset.i).catch(err => console.error(err)) });
-  cm.addEventListener('change', e => { if (e.target.id === 'rt') location.search = '?r=' + e.target.value + '&b=' + G.BS.id });
   cm.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.l) { const b = garage.find(x => x.id === editing); if (b) G.setBus(busOf(b, curLv())) } });
   login(); boot().catch(err => { console.error(err); login('Imeshindwa kuunganisha. Jaribu tena au tumia Free drive.') });
 }
