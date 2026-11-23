@@ -23,5 +23,12 @@ window.BUSES = {
     vmax: 30, acc: 5, tank: 240, fuel: .024, pax: 54, cargo: 60, /* glb: 'models/scania.glb', glbYaw: 0, */ hz: 36, gears: [0, 7, 13, 19, 25], horn: [350, 440] },
   yutong: { id: 'yutong', name: 'Yutong ZK6122', brand: 'TEMBO LINES', price: 12000000, len: 12.0, col: 0xf6f6f6, lower: 0x37424d,
     stripes: [[0x1565c0, 1.6, .24], [0x2e9e46, 1.38, .1]], axles: [-3.5, 3.4], rake: .05, ac: true,
-    vmax: 27, acc: 4.6, tank: 200, fuel: .02, pax: 50, cargo: 50, /* glb: 'models/yutong.glb', glbYaw: 0, */ hz: 46, gears: [0, 6, 12, 18, 23], horn: [420, 520] }
+    vmax: 27, acc: 4.6, tank: 200, fuel: .02, pax: 50, cargo: 50, /* glb: 'models/yutong.glb', glbYaw: 0, */ hz: 46, gears: [0, 6, 12, 18, 23], horn: [420, 520] },
+  // Bei lazima zilingane na bus_price() kwenye Supabase (ideale 18,000,000; torino 40,000,000)
+  ideale: { id: 'ideale', name: 'Marcopolo Ideale 770', brand: 'KILIMANJARO EXPRESS', price: 18000000, len: 7.7, col: 0xf4f1ea, lower: 0x2f3a45,
+    stripes: [[0xe07b00, 1.58, .22], [0x1a1a1a, 1.35, .08]], axles: [-2.3, 1.9, 2.8], rake: .1, ac: true, glb: 'models/marcopolo_ideale.glb',
+    vmax: 26, acc: 5.2, tank: 120, fuel: .016, pax: 30, cargo: 20, hz: 44, gears: [0, 6, 11, 16, 21], horn: [420, 520] },
+  torino: { id: 'torino', name: 'Marcopolo Paradiso G7 Torino', brand: 'SAFARI GOLD', price: 40000000, len: 14.0, col: 0xeeeeee, lower: 0x1f252b,
+    stripes: [[0x0d47a1, 1.7, .26], [0xf5c518, 1.45, .09]], axles: [-4.4, 3.2, 4.9], rake: .22, ac: true,
+    vmax: 33, acc: 5.6, tank: 300, fuel: .027, pax: 60, cargo: 80, hz: 34, gears: [0, 8, 15, 22, 28], horn: [330, 420] }
 };
