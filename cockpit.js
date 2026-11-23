@@ -10,9 +10,11 @@ function makeCockpit(BS) {
   wg.add(new T.Mesh(new T.TorusGeometry(.22, .035, 8, 24), M(0x111111)), B(.4, .035, .035, M(0x111111)), B(.035, .2, .035, M(0x111111))); g.add(wp);
   const cv = document.createElement('canvas'); cv.width = 256; cv.height = 128; const x = cv.getContext('2d'), tx = new T.CanvasTexture(cv);
   const pl = new T.Mesh(new T.PlaneGeometry(.5, .25), new T.MeshBasicMaterial({ map: tx })); pl.position.set(.6, 2.3, zf + .58); pl.rotation.x = -.6; g.add(pl);
-  function upd(kmh, fuel, rev) {
+  function upd(kmh, fuel, rev, cp) {
     x.fillStyle = '#0a0f14'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#e8f1ff'; x.font = 'bold 64px Arial'; x.textAlign = 'center'; x.fillText(Math.round(kmh), 100, 74);
-    x.font = '18px Arial'; x.fillText('km/h', 100, 100); x.font = 'bold 54px Arial'; x.fillStyle = rev ? '#ff8a80' : '#8ef0a0'; x.fillText(rev ? 'R' : 'D', 210, 70);
+    x.font = '18px Arial'; x.fillText('km/h', 100, 100); const gg = cp ? cp.gear : (rev ? 'R' : 'D');
+    x.font = 'bold 54px Arial'; x.fillStyle = cp && cp.stall ? '#ff5252' : rev ? '#ff8a80' : '#8ef0a0'; x.fillText(gg, 210, 70);
+    if (cp) { x.font = '14px Arial'; x.fillStyle = '#9fb3c8'; x.fillText(cp.mode, 210, 92); x.font = 'bold 30px Arial'; x.fillStyle = '#7CFC00'; if (cp.L) x.fillText('\u25C0', 30, 32); if (cp.R) x.fillText('\u25B6', 226, 32) }
     x.fillStyle = '#333'; x.fillRect(20, 112, 216, 8); x.fillStyle = fuel < 20 ? '#ff5252' : '#f5c518'; x.fillRect(20, 112, 2.16 * Math.max(0, Math.min(100, fuel)), 8); tx.needsUpdate = true;
   }
   upd(0, 100, false); g.userData = { wheel: wg, upd }; return g;
