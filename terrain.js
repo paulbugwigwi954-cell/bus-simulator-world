@@ -11,6 +11,7 @@ window.TERR = (function () {
   function town(s) { let m = 1; for (const p of stopS) m = Math.min(m, sm(Math.abs(s - p) / 90)); return m }
   function chan(s) { for (const f of RT.ferries) if (s > f.s0 && s < f.s1) return sm(Math.min(s - f.s0, f.s1 - s) / 18); return 0 }
   const dirt = s => { for (const d of RT.dirt) if (s >= d[0] && s <= d[1]) return true; return false };
+  const nearSt = (s, sd, d) => stopS.some(p => (Math.abs(s - p) < 45 && sd < 0 && d < 62) || (Math.abs(s - (p + 120)) < 32 && sd < 0 && d < 62) || (Math.abs(s - (p + 185)) < 32 && sd > 0 && d < 62));
   const inGap = (s, pad) => { for (const f of RT.ferries) if (s > f.s0 - pad && s < f.s1 + pad) return true; return false };
   function row(s) { const m = amp(s) * .55 * fw(s) * (.25 + .75 * town(s)), P = 14 * Math.sin(s / 520 + RT.ph[0]) + 6 * Math.sin(s / 210 + RT.ph[1]) + 2 * Math.sin(s / 90 + RT.ph[2]); return { E: m * P, mt: m, c: chan(s), s } }
   function hRow(r, x) {
@@ -55,7 +56,7 @@ window.TERR = (function () {
     rib(pv, 6, 12, roadMat); rib(dr, 3.8, 10, dirtMat);
     const R = rng(idx * 7919 + RT.ph[0] * 1000 | 0), bc = bio(s0 + CH / 2), leaf = ((bc.l[0] * 255 | 0) << 16) | ((bc.l[1] * 255 | 0) << 8) | (bc.l[2] * 255 | 0), lm = mat(leaf);
     for (let n = 0; n < 14; n++) {
-      const s = s0 + R() * CH, sd = R() < .5 ? -1 : 1, d = 14 + R() * 110, x = cx(s) + sd * d, z = -s, y = H(x, z), kk = 2 + R() * 3; if (y < -.8 || inGap(s, 30)) continue;
+      const s = s0 + R() * CH, sd = R() < .5 ? -1 : 1, d = 14 + R() * 110, x = cx(s) + sd * d, z = -s, y = H(x, z), kk = 2 + R() * 3; if (y < -.8 || inGap(s, 30) || nearSt(s, sd, d)) continue;
       const g = new T.Group(), t = new T.Mesh(tg, tm), c = new T.Mesh(cg, lm); t.position.y = 2.5; c.scale.set(kk * 1.6, kk * .5, kk * 1.6); c.position.y = 5 + kk * .2; g.add(t, c); g.position.set(x, y, z); grp.add(g); trees.push({ x, z, idx });
     }
     const nh = Math.floor(R() * (dirtRows > 5 ? 5 : 2.2));
