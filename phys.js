@@ -5,7 +5,9 @@ window.PHYS = (function () {
     const BS = env.BS, sf = env.surface(S.s, S.d), av = Math.abs(S.v), sg = Math.sign(S.v), thr = inp.thr && S.fuel > 0;
     const fx = -Math.sin(S.psi), fz = -Math.cos(S.psi), hh = BS.len / 2 - 1.5;
     const slope = (env.H(S.x + fx * hh, S.z + fz * hh) - env.H(S.x - fx * hh, S.z - fz * hh)) / (2 * hh); S.slope = slope;
-    let a = 0; if (thr) a = S.rev ? -Math.max(0, 2.2 - av * .4) : Math.max(0, BS.acc * (1 - .15 * S.cargo / BS.cargo) - S.v * .14);
+    const tq = inp.tq == null ? 1 : inp.tq;
+    let a = 0; if (thr) a = S.rev ? -Math.max(0, 2.2 - av * .4) : tq > 0 ? Math.max(0, BS.acc * (1 - .15 * S.cargo / BS.cargo) * tq - S.v * .14) : 0;
+    if (!S.rev && S.v > 0.5) { if (inp.cap != null && S.v > inp.cap) a -= (S.v - inp.cap) * 1.2 + 1.5; if (!thr && inp.eb) a -= inp.eb }
     if (inp.brake) a -= sg * (12 - 4 * S.wx);
     a -= sg * (.02 * av + sf.drag * av + (av > .05 ? .3 : 0)); const gr = 9.8 * slope * .7; a -= gr;
     let v2 = S.v + a * dt; if (sg !== 0 && Math.sign(v2) !== sg && !thr && Math.abs(gr) < .6) v2 = 0;
