@@ -63,6 +63,11 @@ function makeBus(BS, dest) {
   add(B(W + .06, .16, .22, dark()), 0, .5, -Lb / 2 - .1); add(B(W + .06, .16, .22, dark()), 0, .5, Lb / 2 + .1);
   BS.axles.forEach((z, i) => [-1, 1].forEach(sx => { wheel(g, sx * (W / 2 - .02), .55, z, .55, .36); if (i == 1) wheel(g, sx * (W / 2 - .42), .55, z, .55, .3) }));
   if (BS.ac) add(B(1.5, .28, 1.4, M(0xe8e8e8)), 0, H + .17, -4.4); add(B(.7, .08, .7, M(0xcfcfcf)), 0, H + .08, 2.6); add(B(.7, .08, .7, M(0xcfcfcf)), 0, H + .08, -1.2);
+  // taa za indicator/hazard (rangi ya chungwa); DRIVE inazibadilisha
+  const lg = new T.Group(), mL = M(0x7a5200, { emissive: 0x000000 }), mR = M(0x7a5200, { emissive: 0x000000 });
+  [-1, 1].forEach(sx => { const m = sx < 0 ? mL : mR, ad = (b, x, y, z) => { b.position.set(x, y, z); lg.add(b) };
+    ad(B(.2, .2, .05, m), sx * 1.15, 1.05, -Lb / 2 - .11); ad(B(.2, .22, .05, m), sx * 1.17, 1.2, Lb / 2 + .11); ad(B(.04, .1, .3, m), sx * (W / 2 + .02), 1.0, -Lb / 2 + 1.4) });
+  g.add(lg); g.userData.lampG = lg; g.userData.ind = { L: mL, R: mR };
   return g;
 }
 function makeVeh(kind) {
