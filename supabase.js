@@ -2,7 +2,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config.js";
 
 const ok = !SUPABASE_URL.includes("YOUR-PROJECT");
-const db = ok ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const db = ok ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 export { db };
 window.sb = db;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -11,6 +11,7 @@ window.submitScore = async function (r) {
   const box = r.box || document.getElementById("lb");
   if (!box) return;
   if (!db) { box.innerHTML = "<p>Leaderboard haijawashwa (weka config.js).</p>"; return; }
+  if (!navigator.onLine) { box.innerHTML = "<p>Uko bila mtandao: alama haikutumwa.</p>"; return; }
   box.innerHTML = "<p>Inahifadhi alama...</p>";
   const route = r.route || "dar-dodoma";
   let name = "Dereva";
