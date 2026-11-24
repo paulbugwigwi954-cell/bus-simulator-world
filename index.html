@@ -147,7 +147,7 @@ function finish(){S.done=true;const st=Math.max(1,5-S.crashes*.5-S.off/25-S.dmg/
 {const sb=$('sb'),nm=$('nm');for(const k in BUSES)sb.add(new Option(BUSES[k].name,k,0,BUSES[k]===BS));
 try{nm.value=localStorage.getItem('nm')||''}catch(e){}
 sb.onchange=()=>{try{localStorage.setItem('nm',nm.value)}catch(e){}location.search='?from='+pr[0]+'&to='+pr[1]+'&b='+sb.value};$('ri').textContent=RT.name+' · km '+KMT+' · '+RT.countries.join(', ')+' · '+BS.name}
-function begin(o){o=o||{};S.dmg=o.dmg||0;S.fuel=BS.tank;S.seats=new Array(BS.pax).fill(null);S.sat=100;S.log=[];$('ov').style.display='none';S.run=true;STN.reset();const q=STN.bay(STOPS[0]);S.s=q.s;S.z=-q.s;S.d=q.d;S.x=cx(q.s)+q.d;S.psi=-Math.atan(dxs(q.s));S.y=GY(S.x,S.z);S.v=0;S.delta=0;horn();doors()}
+function begin(o){o=o||{};const FXR={TZS:1,KES:20,UGX:.7,RWF:1.8,BIF:.9};S.base=Math.round((o.baseTzs!=null?o.baseTzs:5e6)/(FXR[RT.cur]||1));S.dmg=o.dmg||0;S.fuel=BS.tank;S.seats=new Array(BS.pax).fill(null);S.sat=100;S.log=[];$('ov').style.display='none';S.run=true;STN.reset();const q=STN.bay(STOPS[0]);S.s=q.s;S.z=-q.s;S.d=q.d;S.x=cx(q.s)+q.d;S.psi=-Math.atan(dxs(q.s));S.y=GY(S.x,S.z);S.v=0;S.delta=0;horn();doors()}
 $('go').onclick=()=>{try{localStorage.setItem('nm',$('nm').value)}catch(e){}begin()};
 window.GAME={setBus,begin,RT,BUSES,STOPS,get BS(){return BS}};
 const sky=new THREE.Color(),dayC=new THREE.Color(0x8cc0ee),nightC=new THREE.Color(0x070a14),duskC=new THREE.Color(0xe07a3a);
@@ -178,7 +178,7 @@ if(S.s>L-60){S.z=-(L-60);S.s=L-60;S.v=0}
 STOPS.forEach(p=>{if(p.border&&!p.cleared&&S.s>p.s+20){S.s=p.s+20;S.z=-S.s;if(S.v>3){S.dmg=Math.min(100,S.dmg+5);S.shake=.5;thud();say('Kizuizi cha mpaka! Simama kwanza.')}S.v=0}});
 S.d=S.x-cx(S.s);if(Math.abs(S.d)>550){S.x=cx(S.s)+Math.sign(S.d)*550;S.d=Math.sign(S.d)*550;S.v*=.5;say('Mwisho wa ramani.')}
 if(S.rev&&S.v<-.2&&performance.now()-lastBeep>900){lastBeep=performance.now();beep()}
-if(ferryY(S.x,S.z)===null&&H(S.x,S.z)<-1.3){const f=RT.ferries.find(f=>S.s>f.s0-30&&S.s<f.s1+30)||RT.ferries[0];let ns=f?(S.s<(f.s0+f.s1)/2?f.s0-14:f.s1+14):S.s;S.s=ns;S.z=-ns;S.x=cx(ns)-3;S.d=-3;S.psi=-Math.atan(dxs(ns));S.v=0;S.dmg=Math.min(100,S.dmg+15);S.shake=1;S.money-=RT.fine*2;sat(-15,'Dereva ameingiza basi majini!');say('Basi limeingia majini! Faini '+fmt(RT.fine*2)+' '+RT.cur);thud()}
+if(ferryY(S.x,S.z)===null&&TERR.water(S.x,S.z)){const f=RT.ferries.find(f=>S.s>f.s0-30&&S.s<f.s1+30)||RT.ferries[0];let ns=f?(S.s<(f.s0+f.s1)/2?f.s0-14:f.s1+14):S.s;S.s=ns;S.z=-ns;S.x=cx(ns)-3;S.d=-3;S.psi=-Math.atan(dxs(ns));S.v=0;S.dmg=Math.min(100,S.dmg+15);S.shake=1;S.money-=RT.fine*2;sat(-15,'Dereva ameingiza basi majini!');say('Basi limeingia majini! Faini '+fmt(RT.fine*2)+' '+RT.cur);thud()}
 if(S.tcd>0)S.tcd-=dt;else if(Math.abs(S.d)>9){const fx=-Math.sin(S.psi),fz=-Math.cos(S.psi),h=BS.len/2-1;for(const k of [-1,0,1]){if(TERR.treeHit(S.x+fx*h*k,S.z+fz*h*k,1.4)){const sg=Math.sign(S.v)||1;S.x-=fx*sg*2;S.z-=fz*sg*2;S.v*=-.15;S.crashes++;S.dmg=Math.min(100,S.dmg+8);S.shake=.7;S.tcd=1.2;sat(-5,'Dereva amegonga mti');say('Umegonga mti!');thud();break}}}
 const av=Math.abs(S.v);if(S.surf>0&&av>3)S.dirt=Math.min(1,S.dirt+dt*.012*(S.surf==2?1.6:1));if(S.wx>.3&&av>3)S.dirt=Math.min(1,S.dirt+dt*.006);
 if(S.dirt>.8&&!S.dirtWarn){S.dirtWarn=1;sat(-5,'Basi ni chafu sana: abiria wanalalamika')}if(S.dirt<.5)S.dirtWarn=0;
@@ -207,7 +207,7 @@ sky.copy(nightC).lerp(dayC,Math.min(1,day*1.6));if(dusk>0)sky.lerp(duskC,dusk*.6
 sun.intensity=.15+.8*day;hemi.intensity=.18+.5*day;spot.intensity=day<.3?2.2:0;
 const nx=STOPS.find(p=>p.s>S.s+10)||STOPS[STOPS.length-1],surf=S.surf==1?' · vumbi':S.surf==2?' · nje ya barabara':'';
 $('l').innerHTML='<b>'+Math.round(Math.abs(S.v)*3.6)+'</b> km/h '+DRIVE.label(S)+'<br>Mafuta: '+Math.round(S.fuel)+' L<br>Saa: '+String(Math.floor(hr_)).padStart(2,'0')+':'+String(Math.floor(hr_%1*60)).padStart(2,'0')+'<br>Urefu: '+Math.round(S.y)+' m'+surf;
-$('r').innerHTML=RT.cur+' '+fmt(S.money)+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Mizigo: '+S.cargo+'/'+BS.cargo+'<br>Ajali: '+S.crashes+'<br>Hali: '+Math.round(100-S.dmg)+'%<br>Uchafu: '+Math.round(S.dirt*100)+'%<br>Furaha: '+Math.round(S.sat)+'% (T)'+(S.wx>.3?' 🌧':'');
+$('r').innerHTML=RT.cur+' '+fmt((S.base||0)+S.money)+((S.base||0)?'<br><small>Safari: '+(S.money>=0?'+':'')+fmt(S.money)+'</small>':'')+'<br>Abiria: '+S.pax.length+'/'+BS.pax+'<br>Mizigo: '+S.cargo+'/'+BS.cargo+'<br>Ajali: '+S.crashes+'<br>Hali: '+Math.round(100-S.dmg)+'%<br>Uchafu: '+Math.round(S.dirt*100)+'%<br>Furaha: '+Math.round(S.sat)+'% (T)'+(S.wx>.3?' 🌧':'');
 $('nx').textContent='Kituo: '+nx.n+' · km '+Math.max(0,Math.round(nx.km-KM(S.s)));$('pf').style.width=Math.max(0,Math.min(100,KM(S.s)/KMT*100))+'%';
 if(S.wait>0)$('nx').textContent='Ukaguzi wa mpaka: '+Math.ceil(S.wait)+'s';if(S.ferry)$('nx').textContent='Feri inavuka: '+Math.ceil((1-S.ferry.u)*14)+'s';
 if(S.wx>.02){const a=rg.attributes.position.array;for(let i=0;i<NR;i++){const k=i*6;a[k+1]-=30*dt;a[k+4]-=30*dt;if(a[k+1]<-10){a[k+1]+=40;a[k+4]+=40}}rg.attributes.position.needsUpdate=true}
