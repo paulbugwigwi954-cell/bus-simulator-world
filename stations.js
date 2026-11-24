@@ -131,7 +131,7 @@ window.STN = (function () {
     const sg = plate(7, 1.5, ['GEREJI'], '#f9a825', '#1a1a1a', -Math.PI / 2); sg.position.set(18.9, 7.4, 0); g.add(sg);
     // bay A: gari juu ya lift; bay B: gari chini na fundi
     [-1.4, 1.4].forEach(o => bx(g, .25, 2, .25, M(0xf9a825), 25, 1.1, -5.75 + o)); [-1, 1].forEach(o => bx(g, 5.4, .22, .5, M(0xf9a825), 25, 1.9, -5.75 + o * .9));
-    if (window.makeVeh) { const a = window.makeVeh('pickup'); a.rotation.y = -Math.PI / 2; a.position.set(25, 2.0, -5.75); g.add(a); const b = window.makeVeh('sedan'); b.rotation.y = -Math.PI / 2; b.position.set(25, .1, 5.75); g.add(b) }
+    try { if (window.makeVeh) { const a = window.makeVeh('pickup').g; a.rotation.y = -Math.PI / 2; a.position.set(25, 2.0, -5.75); g.add(a); const b = window.makeVeh('sedan').g; b.rotation.y = -Math.PI / 2; b.position.set(25, .1, 5.75); g.add(b) } } catch (e) { console.warn('gari la gereji:', e) }
     const mech = person(g, 22, -5.75, { kind: 'work', face: Math.PI / 2, shirt: 0x1565c0, pants: 0x1565c0 }); person(g, 25, 4.2, { kind: 'work', face: Math.PI, shirt: 0x1565c0, pants: 0x1565c0 });
     bx(g, 3, 1, .8, M(0x8a6a44), 31, .6, -9); bx(g, .6, .1, .3, M(0xcccccc), 30.8, 1.15, -8.8); person(g, 30, -9, { kind: 'idle', shirt: 0x1565c0, face: Math.PI / 2 });
     [[17.4, -9], [17.4, 9], [17.4, 11]].forEach(([x, z]) => { for (let k = 0; k < 4; k++) cy(g, .5, .28, M(0x151515), x, .3 + k * .29, z, 14) });
@@ -226,9 +226,11 @@ window.STN = (function () {
   function init(o) {
     X = o; const STOPS = o.STOPS;
     STOPS.forEach((p, i) => {
-      stand(p, i); if (p.border || i === STOPS.length - 1) return;
+      try { stand(p, i) } catch (e) { console.error('stendi', e) }
+      if (p.border || i === STOPS.length - 1) return;
       const ok = s => s > 60 && s < o.L - 80 && !o.inGap(s, 50) && !STOPS.some(q => Math.abs(q.s - s) < 70);
-      if (ok(p.s + 120)) fuelStation(p.s + 120); if (ok(p.s + 185)) garage(p.s + 185);
+      try { if (ok(p.s + 120)) fuelStation(p.s + 120) } catch (e) { console.error('sheli', e) }
+      try { if (ok(p.s + 185)) garage(p.s + 185) } catch (e) { console.error('gereji', e) }
     });
   }
   function reset() { fz.phase = 'idle'; fz.pumping = false; gz.t = 0; gz.back = false; warned = false }
