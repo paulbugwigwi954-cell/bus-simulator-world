@@ -2,6 +2,7 @@
 (function () {
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1'))
     addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist() } catch (e) {}   // simu isifute kuingia/akiba bila ruhusa
   const standalone = () => (matchMedia && matchMedia('(display-mode: standalone)').matches) || (matchMedia && matchMedia('(display-mode: fullscreen)').matches) || navigator.standalone;
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   let dp = null, btn = null;
