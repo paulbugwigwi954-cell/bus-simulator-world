@@ -20,6 +20,7 @@ window.TERR = (function () {
     if (r.c > 0) h = h * (1 - r.c) - 7 * r.c; return h;
   }
   const H = (x, z) => hRow(row(-z), x), E = s => row(s).E;
+  const water = (x, z) => { const r = row(-z); return r.c > .3 && hRow(r, x) < -1.8 };   // maji ni kwenye mto wa feri tu, si barabara ya kawaida iliyo chini
   function bio(s) { const a = RT.bioPts; let i = 1; if (s <= a[0][0]) i = 0; else { while (i < a.length - 1 && s > a[i][0]) i++ } const p = a[i - 1] || a[0], q = a[i], t = q[0] > p[0] ? Math.max(0, Math.min(1, (s - p[0]) / (q[0] - p[0]))) : 0; const c = h => [(h >> 16) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255], g1 = c(p[1]), g2 = c(q[1]), l1 = c(p[2]), l2 = c(q[2]); return { g: g1.map((v, k) => v + (g2[k] - v) * t), l: l1.map((v, k) => v + (l2[k] - v) * t) } }
   const mat = (hex) => matCache[hex] || (matCache[hex] = new T.MeshLambertMaterial({ color: hex }));
   let tg, cg, tm, hm, pm, roadMat, dirtMat, terrMat, pMat;
@@ -82,5 +83,5 @@ window.TERR = (function () {
   function update(s) { const c = Math.floor(s / CH); for (let i = Math.max(0, c - 1); i <= Math.min(maxIdx, c + 3); i++) if (!chunks.has(i)) { build(i); break } chunks.forEach((v, k) => { if (k < c - 2 || k > c + 4) remove(k) }) }
   function prime(s) { const c = Math.floor(s / CH); for (let i = Math.max(0, c - 1); i <= Math.min(maxIdx, c + 3); i++) if (!chunks.has(i)) build(i) }
   function treeHit(x, z, r) { for (const t of trees) { const dx = t.x - x, dz = t.z - z; if (dx * dx + dz * dz < (r + .6) * (r + .6)) return t } return null }
-  return { init, update, prime, H, E, dirt, inGap, treeHit, get hz() { return hz }, get people() { return people }, get trees() { return trees }, get chunkCount() { return chunks.size } };
+  return { init, update, prime, H, E, water, dirt, inGap, treeHit, get hz() { return hz }, get people() { return people }, get trees() { return trees }, get chunkCount() { return chunks.size } };
 })();
