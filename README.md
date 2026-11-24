@@ -34,3 +34,11 @@ Angalia `CREDITS.md` (modeli ya Ideale inahitaji kumtaja mwandishi).
 - **Sheli:** mbele ya kila stendi (karibu mita 120 baada yake). Simama kando ya pampu, bonyeza **E**, mhudumu analeta mpira; shikilia **JAZA** (au **J**) kujaza lita kwa lita, kisha **MALIZA & LIPA** (au **E**): mpira unaondolewa na malipo yanafanyika. Mafuta hayajazwi tena kiotomatiki stendi.
 - **Gereji:** upande wa kulia wa barabara baada ya sheli. Simama na bonyeza **E** kutengeneza uharibifu wa basi (gharama kulingana na asilimia ya uharibifu).
 - Msimbo uko kwenye `stations.js`.
+
+## App ya simu (PWA)
+- Weka mradi kwenye **GitHub Pages** (au hosting yoyote ya **https**). Fungua kiungo kwenye simu:
+  - **Android (Chrome):** kitufe cha "📲 Weka kwenye simu" kwenye skrini ya kwanza, au menyu ⋮ > Install app.
+  - **iPhone (Safari):** Shiriki > Ongeza kwenye Skrini ya Kwanza.
+- Baada ya kufunguliwa mara moja mchezo unafanya kazi bila intaneti (alama na rekodi za Supabase zinahitaji mtandao).
+- Ukibadilisha faili yoyote, ongeza namba ya `VERSION` ndani ya `sw.js` ili simu zipate toleo jipya.
+- Faili: `manifest.webmanifest`, `sw.js`, `pwa.js`, folda `icons/`.
