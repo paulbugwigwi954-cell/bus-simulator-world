@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="sw"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0a0e14"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Safari"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Safari ya Mkoani: Afrika Mashariki</title>
 <style>
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--p:rgba(10,14,20,.72);--t:#fff;--a:#f5c518}
@@ -47,6 +48,7 @@ canvas{display:block;width:100%;height:100%}
 <script src="./settings.js"></script>
 <script src="./music.js"></script>
 <script src="./map.js"></script>
+<script src="./pwa.js"></script>
 <script>
 const $=id=>document.getElementById(id),Q=new URLSearchParams(location.search);
 const LEG={dodoma:['dar','dodoma'],mombasa:['nairobi','mombasa'],mbale:['kampala','mbale'],namanga:['arusha','nairobi']};
