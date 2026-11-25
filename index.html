@@ -18,6 +18,8 @@ canvas{display:block;width:100%;height:100%}
 #pad{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px;pointer-events:none}
 #pad div{display:flex;gap:8px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end;max-width:230px}
 #pad button{width:64px;height:64px;border-radius:50%;border:2px solid #fff6;background:var(--p);color:#fff;font-size:13px;touch-action:none}
+#pad>div:last-child{margin-left:auto}
+@media (max-height:430px){#pad button{width:54px;height:54px;font-size:12px}#pad div{max-width:190px}#tb button{width:38px;height:38px;font-size:16px}#sw,#sw svg{width:120px!important;height:120px!important}}
 #ov{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;z-index:1}
 #ov div{max-width:460px}#ov h1{margin:0 0 8px;color:var(--a)}#ov p{font-size:14px;line-height:1.5;margin:6px 0}
 #ov button{margin-top:12px;padding:12px 28px;font-size:17px;border:0;border-radius:8px;background:var(--a);font-weight:700}
@@ -31,7 +33,7 @@ canvas{display:block;width:100%;height:100%}
 <div id="pad"><div id="lpad"><button data-k="L">◀</button><button data-k="R">▶</button></div><div><button data-k="V">Gia R/D</button><button data-k="C">Kamera</button><button data-k="E">Mlango</button><button data-k="B">Break</button><button data-k="G">Gesi</button></div></div>
 <div id="ov"><div><h1>Safari ya Mkoani</h1><p id="ri"></p><p><button class="s" id="mpb">Chagua njia kwenye ramani</button></p><p><select id="sb" style="padding:9px;border-radius:8px"></select></p>
 <p>Endesha kushoto, ndani au nje ya barabara: usukani uko huru. Simamisha basi stendi au kwa abiria wanaopunga barabarani, kisha bonyeza <b>E</b> (Mlango). Barabara zina milima, mabonde, na sehemu za vumbi vijijini. Simama kwenye taa nyekundu, kwenye mipaka (ukaguzi wa hati), na kwenye feri (E ukiwa juu ya feri). Karibu na stendi kuna sehemu ya kuosha gari (E ukiwa ndani yake).</p>
-<p>W/↑ gesi · S/↓ break · A D / ← → usukani · R kurudi/mbele · I/K gia juu/chini · N Auto/Semi/Manual · Z/X indicator · F hazards · E mlango · H honi · T tiketi · C kamera · O usukani/kuinamisha · U muziki · P ramani · M sauti</p>
+<p>W/↑ gesi · S/↓ break · A D / ← → usukani · R kurudi/mbele · I/K gia juu/chini · N Auto/Semi/Manual · Z/X indicator · F hazards · Y sauti ya injini · E mlango · H honi · T tiketi · C kamera · O usukani/kuinamisha · U muziki · P ramani · M sauti</p>
 <input id="nm" maxlength="20" placeholder="Jina lako" style="padding:11px;border-radius:8px;border:0;margin-right:6px"><button id="go">Anza Safari</button></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
