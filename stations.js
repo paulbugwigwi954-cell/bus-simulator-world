@@ -75,7 +75,7 @@ window.STN = (function () {
     bx(g, 19.2, .45, 32.4, M(0x6d7278), -21.9, 5.4, 0); bx(g, .5, .7, 32.4, acc, -12.4, 5.2, 0);                       // paa na bendi ya rangi
     for (let z = -16; z <= 16; z += 8) cy(g, .14, 5.3, M(0x555a60), -12.6, 2.75, z, 8);
     [-9, 0, 9].forEach(z => bx(g, 4, .06, .7, BM(0xfff4d0), -24, 5.1, z));
-    const sg = spr(g, p.n.toUpperCase(), '#0b3d62', 12, -17, 7.4, 0);
+    const sg = spr(g, p.n.toUpperCase(), '#0b3d62', 8, -17, 6.9, 0);
     // ndani: madawati ya tiketi, viti, vibanda
     [-6, 6].forEach(z => { bx(g, 1.1, 1.1, 4.4, M(0x8a6a44), -29.3, .65, z); bx(g, .1, .9, 4.4, glass, -29.8, 1.65, z); person(g, -30.2, z, { kind: 'vend', face: Math.PI / 2, shirt: 0x1565c0 }) });
     spr(g, 'TIKETI', '#1565c0', 3, -30.6, 3.6, 0);
