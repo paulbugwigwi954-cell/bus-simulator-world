@@ -1,6 +1,6 @@
 // Service worker: huruhusu mchezo ufunguke bila intaneti baada ya kufunguliwa mara ya kwanza.
 // Ukibadilisha faili za mchezo, ongeza namba ya VERSION ili simu zichukue mpya.
-const VERSION = 'safari-v2';
+const VERSION = 'safari-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './config.js', './supabase.js', './career.js', './data.js', './world.js', './vehicles.js', './cockpit.js', './drive.js', './stations.js', './terrain.js', './phys.js', './traffic.js', './tickets.js', './settings.js', './music.js', './map.js', './pwa.js',
   './models/marcopolo_ideale.glb', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 const CDN = ['https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm'];
