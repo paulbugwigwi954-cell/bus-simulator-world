@@ -1,10 +1,12 @@
 // Gia (Auto / Semi / Manual), indicator, hazards, na sauti ya injini ya basi la dizeli.
-// Vifunguo: I gia juu · K gia chini (N = neutral, kwenye Manual) · N aina ya gia · Z/X indicator kushoto/kulia · F hazards
+// Vifunguo: I gia juu · K gia chini (N = neutral, kwenye Manual) · N aina ya gia · Z/X indicator kushoto/kulia · F hazards · Y sauti ya injini
 window.DRIVE = (function () {
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const MODES = ['auto', 'semi', 'manual'], MN = { auto: 'Auto', semi: 'Semi', manual: 'Manual' };
   const D = { mode: 'auto', gear: 1, eng: true, L: false, R: false, H: false, ph: 0, lit: false, rpm: .2, turned: 0, lug: 0, restT: 0, prevV: 0 };
-  try { const m = localStorage.getItem('trm'); if (MODES.includes(m)) D.mode = m } catch (e) {}
+  D.vol = 1;   // sauti ya injini: 0 kimya, 1 laini, 2 kawaida
+  try { const m = localStorage.getItem('trm'); if (MODES.includes(m)) D.mode = m; const v = parseInt(localStorage.getItem('engvol')); if (v >= 0 && v <= 2) D.vol = v } catch (e) {}
+  const VOLS = [0, .5, .9], VN = ['Kimya', 'Laini', 'Kawaida'];
   let BS = null, ind = null, AC = null, A = null, noiseBuf = null;
   const N = () => BS.gears.length, lo = g => BS.gears[g - 1], hi = g => g < N() ? BS.gears[g] : BS.vmax;
   const say = t => { if (typeof window.say === 'function') window.say(t) };
@@ -21,7 +23,9 @@ window.DRIVE = (function () {
     D.gear = clamp(D.gear + d, D.mode === 'manual' ? 0 : 1, N());
     say('Gia ' + (D.gear === 0 ? 'N (neutral)' : D.gear));
   }
+  function cycleVol() { D.vol = (D.vol + 1) % 3; try { localStorage.setItem('engvol', D.vol) } catch (e) {} say('Sauti ya injini: ' + VN[D.vol]) }
   function key(code) {
+    if (code === 'KeyY') return cycleVol();
     if (code === 'KeyI') shift(1); else if (code === 'KeyK') shift(-1);
     else if (code === 'KeyN') setMode(MODES[(MODES.indexOf(D.mode) + 1) % 3]);
     else if (code === 'KeyZ') { D.L = !D.L; D.R = false; D.H = false; D.ph = 0; D.turned = 0; sync() }
@@ -81,38 +85,34 @@ window.DRIVE = (function () {
   function audioInit(ac) {
     AC = ac; if (A || !AC) return;
     const m = AC.createGain(); m.gain.value = 0; m.connect(AC.destination);
-    const sh = AC.createWaveShaper(), cv = new Float32Array(256); for (let i = 0; i < 256; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(2.2 * x) } sh.curve = cv;
-    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 400; lp.Q.value = 1.2;
-    const amp = AC.createGain(); amp.gain.value = .8; const mix = AC.createGain(); mix.gain.value = 1; mix.connect(lp); lp.connect(sh); sh.connect(amp); amp.connect(m);
-    const o = [['sawtooth', .55], ['square', .5], ['triangle', .25]].map(([t, g]) => { const x = AC.createOscillator(), gg = AC.createGain(); x.type = t; gg.gain.value = g; x.connect(gg); gg.connect(mix); x.start(); return x });
-    const lfo = AC.createOscillator(), ld = AC.createGain(); lfo.frequency.value = 10; ld.gain.value = .3; lfo.connect(ld); ld.connect(amp.gain); lfo.start();
-    const ns = AC.createBufferSource(); ns.buffer = noise(); ns.loop = true; const bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = .7; const ng = AC.createGain(); ng.gain.value = 0; ns.connect(bp); bp.connect(ng); ng.connect(m); ns.start();
-    const tb = AC.createOscillator(), tg = AC.createGain(); tb.type = 'sine'; tg.gain.value = 0; tb.connect(tg); tg.connect(m); tb.start();
-    A = { m, o, lp, lfo, ld, bp, ng, tb, tg };
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = .3; lp.connect(m);
+    // sauti laini: harmoniki za chini (triangle/sine) bila kelele kali; hakuna distortion wala filimbi
+    const o = [['triangle', .55, 2, 0], ['triangle', .42, 3, 7], ['sine', .3, 4, 0], ['sine', .14, 6, -5]].map(([t, g, k, dt]) => { const x = AC.createOscillator(), gg = AC.createGain(); x.type = t; x.detune.value = dt; gg.gain.value = g; x.connect(gg); gg.connect(lp); x.start(); return { x, k } });
+    const ns = AC.createBufferSource(); ns.buffer = noise(); ns.loop = true; const nl = AC.createBiquadFilter(); nl.type = 'lowpass'; nl.frequency.value = 220; nl.Q.value = .3; const ng = AC.createGain(); ng.gain.value = 0; ns.connect(nl); nl.connect(ng); ng.connect(m); ns.start();
+    A = { m, o, lp, nl, ng };
   }
   function audio(ac, dt, thr, on, S, bs) {
-    if (!A) return; const t = ac.currentTime, v = Math.abs(S.v), alive = on && D.eng;
-    const real = 650 + D.rpm * 1700, f = real / 60 * 3 * (bs.hz / 40);
-    A.o[0].frequency.setTargetAtTime(f, t, .05); A.o[1].frequency.setTargetAtTime(f / 2, t, .05); A.o[2].frequency.setTargetAtTime(f * 2, t, .05);
-    A.lp.frequency.setTargetAtTime(220 + D.rpm * 900 + (thr ? 500 : 0), t, .08);
-    A.lfo.frequency.setTargetAtTime(6 + D.rpm * 22, t, .1); A.ld.gain.setTargetAtTime(.08 + .3 * (1 - D.rpm), t, .1);
-    A.m.gain.setTargetAtTime(alive ? .16 + D.rpm * .12 + (thr ? .1 : 0) : 0, t, .12);
-    A.bp.frequency.setTargetAtTime(300 + v * 40, t, .1); A.ng.gain.setTargetAtTime(on ? .03 + D.rpm * .05 + v * .004 : 0, t, .15);
-    A.tb.frequency.setTargetAtTime(2200 + D.rpm * 3500, t, .1); A.tg.gain.setTargetAtTime(alive && thr && D.rpm > .5 ? (D.rpm - .5) * .03 : 0, t, .15);
+    if (!A) return; const t = ac.currentTime, v = Math.abs(S.v), alive = on && D.eng, vol = VOLS[D.vol];
+    const f = (28 + D.rpm * 34) * (bs.hz / 40);
+    A.o.forEach(p => p.x.frequency.setTargetAtTime(f * p.k, t, .25));
+    A.lp.frequency.setTargetAtTime(380 + D.rpm * 420 + (thr ? 120 : 0), t, .3);
+    A.m.gain.setTargetAtTime(alive ? vol * (.05 + .05 * D.rpm + (thr ? .02 : 0)) : 0, t, .3);
+    A.nl.frequency.setTargetAtTime(180 + D.rpm * 220 + v * 8, t, .3);
+    A.ng.gain.setTargetAtTime(on ? vol * (.012 + .018 * D.rpm + Math.min(.02, v * .0007)) : 0, t, .4);
   }
-  function click(hi_) { if (!AC || window.DMUTE) return; const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime; o.type = 'square'; o.frequency.value = hi_ ? 1900 : 1400; g.gain.setValueAtTime(.035, t); g.gain.exponentialRampToValueAtTime(.001, t + .03); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .04) }
-  function hiss() { if (!AC || window.DMUTE) return; const s = AC.createBufferSource(), g = AC.createGain(), h = AC.createBiquadFilter(), t = AC.currentTime; s.buffer = noise(); h.type = 'highpass'; h.frequency.value = 3500; g.gain.setValueAtTime(.09, t); g.gain.exponentialRampToValueAtTime(.001, t + .6); s.connect(h); h.connect(g); g.connect(AC.destination); s.start(t); s.stop(t + .65) }
+  function click(hi_) { if (!AC || window.DMUTE) return; const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime; o.type = 'triangle'; o.frequency.value = hi_ ? 1500 : 1150; g.gain.setValueAtTime(.022, t); g.gain.exponentialRampToValueAtTime(.001, t + .03); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + .04) }
+  function hiss() { if (!AC || window.DMUTE) return; const s = AC.createBufferSource(), g = AC.createGain(), h = AC.createBiquadFilter(), t = AC.currentTime; s.buffer = noise(); h.type = 'highpass'; h.frequency.value = 3500; g.gain.setValueAtTime(.045, t); g.gain.exponentialRampToValueAtTime(.001, t + .6); s.connect(h); h.connect(g); g.connect(AC.destination); s.start(t); s.stop(t + .65) }
 
   // ---- vitufe vya kugusa (simu) ----
   let mb;
   function sync() { if (mb) { mb.textContent = MN[D.mode]; mb.style.background = ''; } document.querySelectorAll('#tb2 [data-d]').forEach(b => { const k = b.dataset.d; b.style.outline = (k === 'L' && D.L) || (k === 'R' && D.R) || (k === 'H' && D.H) ? '3px solid #7CFC00' : '' }) }
   function ui() {
     const st = document.createElement('style');
-    st.textContent = '#tb2{position:fixed;left:58px;top:calc(104px + env(safe-area-inset-top,0px));display:grid;grid-template-columns:repeat(2,42px);gap:6px;z-index:3}#tb2 button{width:42px;height:42px;border-radius:50%;border:2px solid #fff6;background:rgba(10,14,20,.72);color:#fff;font-size:12px;padding:0;touch-action:none}';
+    st.textContent = '#tb2{position:fixed;left:58px;top:calc(104px + env(safe-area-inset-top,0px));display:grid;grid-template-columns:repeat(3,42px);gap:6px;z-index:3}#tb2 button{width:42px;height:42px;border-radius:50%;border:2px solid #fff6;background:rgba(10,14,20,.72);color:#fff;font-size:12px;padding:0;touch-action:none}@media (max-height:430px){#tb2{left:54px;grid-template-columns:repeat(3,38px)}#tb2 button{width:38px;height:38px;font-size:11px}}';
     document.head.appendChild(st);
     const box = document.createElement('div'); box.id = 'tb2';
-    [['⚠', 'H'], ['◁', 'L'], ['▷', 'R'], ['G+', 'U'], ['G−', 'W'], ['', 'M']].forEach(([t, d]) => { const b = document.createElement('button'); b.textContent = t; b.dataset.d = d; if (d === 'M') mb = b; box.appendChild(b) });
-    box.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); const d = b.dataset.d; key({ H: 'KeyF', L: 'KeyZ', R: 'KeyX', U: 'KeyI', W: 'KeyK', M: 'KeyN' }[d]) });
+    [['⚠', 'H'], ['◁', 'L'], ['▷', 'R'], ['G+', 'U'], ['G−', 'W'], ['', 'M'], ['🔉', 'Y']].forEach(([t, d]) => { const b = document.createElement('button'); b.textContent = t; b.dataset.d = d; if (d === 'M') mb = b; box.appendChild(b) });
+    box.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if (!b) return; e.preventDefault(); const d = b.dataset.d; key({ H: 'KeyF', L: 'KeyZ', R: 'KeyX', U: 'KeyI', W: 'KeyK', M: 'KeyN', Y: 'KeyY' }[d]) });
     document.body.appendChild(box); sync();
   }
   if (document.body) ui(); else addEventListener('DOMContentLoaded', ui);
